@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root { 
+      --primary: #0f172a; 
+      --accent: #ff5501; 
+      --accent-hover: #e64a00;
+      --bg: #f1f5f9; 
+      --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --input-focus: rgba(255, 85, 1, 0.1);
+      --success: #22c55e; 
+      --danger: #ef4444; 
+    }
+    body { background: var(--bg); font-family: 'Plus Jakarta Sans', sans-serif; color: #334155; min-height: 100vh; }
+    #loader { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
+    .spinner-grow.text-accent { color: var(--accent) !important; }
+    .loader-text { color: var(--accent) !important; font-weight: 700; }
+    .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px; }
+    .login-card { width: 100%; max-width: 450px; background: white; border-radius: 24px; padding: 48px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
+    .login-logo { width: 120px; height: 120px; object-fit: contain; margin-bottom: 24px; border-radius: 16px; }
+    .navbar { background: white; padding: 1rem 0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border-bottom: 1px solid #e2e8f0; }
+    .navbar .container { display: flex; justify-content: flex-start; align-items: center; position: relative; }
+    .navbar-brand { display: flex; align-items: center; gap: 16px; font-weight: 800; color: var(--primary) !important; font-size: 1.5rem; margin-right: auto; }
+    .nav-logo { height: 50px; width: auto; }
+    .user-nav-info { display: flex; align-items: center; gap: 12px; }
+    
+    .app-main { max-width: 1450px; margin: 40px auto; padding: 0 20px; }
+    .card, .card-body, .tab-content, .tab-pane, .movement-table-wrap { overflow: visible !important; }
+    .card { border: none; border-radius: 20px; background: white; box-shadow: var(--card-shadow); }
+    .card-header { background: white; border-bottom: 1px solid #f1f5f9; padding: 24px 32px; font-weight: 700; font-size: 1.25rem; color: var(--primary); }
+    .card-body { padding: 32px; }
+    .nav-pills { background: #f1f5f9; padding: 6px; border-radius: 14px; display: inline-flex; margin-bottom: 32px; }
+    .nav-pills .nav-link { color: #64748b; font-weight: 600; border-radius: 10px; padding: 10px 24px; transition: all 0.2s; }
+    .nav-pills .nav-link.active { background: white; color: var(--accent); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .form-label { font-weight: 600; color: #475569; font-size: 0.875rem; margin-bottom: 8px; }
+    .form-control, .form-select { border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; font-size: 0.95rem; transition: all 0.2s; }
+    .form-control:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--input-focus); }
+    .form-control[readonly], .form-select:disabled { background-color: #f8fafc; }
+    .btn-primary { background: var(--accent); border: none; border-radius: 12px; padding: 14px 24px; font-weight: 700; transition: all 0.2s; color: white; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); color: white; }
+    .dropdown-search-wrap { position: relative; }
+    .dropdown-menu { width: 100%; max-height: 400px !important; overflow-y: visible !important; display: none; padding: 12px; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); z-index: 9999 !important; margin-top: 8px; position: absolute; background: white; }
+    .opt-cont { max-height: 300px; overflow-y: auto !important; margin-top: 8px; }
+    .dropdown-item { padding: 12px 16px; cursor: pointer; font-size: 0.9rem; border-radius: 10px; margin-bottom: 2px; border: none; transition: all 0.2s; white-space: normal;}
+    .dropdown-item:hover { background-color: #fff7ed; color: var(--accent); }
+    .selected-display { border: 1px solid #e2e8f0; border-radius: 12px 0 0 12px !important; padding: 12px 16px; background: white; cursor: pointer; min-height: 50px; display: flex; justify-content: space-between; align-items: center; }
+    .input-group-text { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; cursor: pointer; width: 50px; justify-content: center; border-radius: 0 12px 12px 0 !important; }
+    .table { margin-bottom: 0; width: 100%; text-align: center !important; }
+    .table thead th { background: #f8fafc; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; font-weight: 700; color: #64748b; padding: 12px 8px; text-align: center !important; vertical-align: middle !important; border-bottom: none; }
+    .table tbody td { padding: 12px 8px; font-size: 0.85rem; vertical-align: middle !important; border-bottom: 1px solid #f1f5f9; text-align: center !important; }
+    #stock-list td:first-child { text-align: left !important; }
+    .badge { padding: 6px 12px; border-radius: 8px; font-weight: 600; }
+    .filter-section { background: #f8fafc; padding: 20px; border-radius: 16px; margin-bottom: 24px; border: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+
+<div id="loader"><div class="spinner-grow text-accent" style="width: 3rem; height: 3rem;"></div><div class="mt-3 loader-text">Please wait...</div></div>
+
+<div id="login-section" class="login-container" style="display:none;">
+  <div class="login-card">
+    <img src="<?= logoUrl ?>" id="login-logo-img" class="login-logo" alt="Logo">
+    <h3 class="fw-bold text-dark mb-1">Inventory Portal</h3>
+    <p class="text-muted mb-4">Sign in to manage your stock</p>
+    <div class="text-start mb-3">
+      <label class="form-label">Identifier</label>
+      <div class="input-group">
+        <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px !important;"><i class="bi bi-person"></i></span>
+        <input type="text" id="l-user" class="form-control" style="border-radius: 0 12px 12px 0;" placeholder="Name or Email">
+      </div>
+    </div>
+    <div class="text-start mb-4">
+      <label class="form-label">Password</label>
+      <div class="input-group">
+        <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px !important;"><i class="bi bi-lock"></i></span>
+        <input type="password" id="l-pass" class="form-control" style="border-radius: 0 12px 12px 0;" placeholder="••••••••">
+      </div>
+    </div>
+    <button onclick="doLogin()" class="btn btn-primary w-100 mb-3">Sign In</button>
+    <div class="text-center">
+      <a href="#" onclick="doRecover(); return false;" class="text-decoration-none small fw-bold" style="color: var(--accent);">Forgot Password?</a>
+    </div>
+  </div>
+</div>
+
+<div id="app-section" style="display:none;">
+  <nav class="navbar">
+    <div class="container app-main" style="margin:0 auto;">
+      <a class="navbar-brand" href="<?= scriptUrl ?>" style="text-decoration: none;">
+        <img src="<?= logoUrl ?>" class="nav-logo" id="nav-logo-img" alt="Logo"> Inventory System
+      </a>
+      <div class="user-nav-info">
+        <div class="text-end d-none d-md-block">
+          <div id="user-display" class="fw-bold text-dark small"></div>
+          <div class="text-muted smaller" style="font-size: 0.75rem;"><i class="bi bi-person-badge text-accent"></i> <span id="role-display" class="text-uppercase"></span></div>
+        </div>
+        <button onclick="doLogout()" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-box-arrow-right fs-5"></i></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="app-main">
+    <div class="text-center">
+      <ul class="nav nav-pills" id="main-tabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-move" type="button"><i class="bi bi-arrow-left-right me-2"></i>Movement</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-queue" type="button" onclick="refresh()"><i class="bi bi-inbox me-2"></i>Pending Queue</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-inv" type="button" onclick="refresh()"><i class="bi bi-box-seam me-2"></i>Inventory</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-hist" type="button" onclick="refresh()"><i class="bi bi-clock-history me-2"></i>History</button></li>
+      </ul>
+    </div>
+
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="tab-move">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Transaction Entry</span>
+            <div style="width: 250px;">
+              <select id="action" class="form-select form-select-sm fw-bold" onchange="handleActionChange()"></select>
+            </div>
+          </div>
+          <div class="card-body">
+            
+            <div class="row g-3 mb-4 pb-4 border-bottom" id="loc-fields-container">
+              <div class="col-md-4" id="client-grp">
+                <label class="form-label">Client Name <span class="text-danger">*</span></label>
+                <select id="t-client" class="form-select"><option value="">Select...</option></select>
+              </div>
+              <div class="col-md-4" id="loc-grp">
+                <label class="form-label">Warehouse Location <span class="text-danger">*</span></label>
+                <select id="t-location" class="form-select" onchange="handleLocationChange()"><option value="">Select Location...</option></select>
+              </div>
+              <div class="col-md-4" id="doc-grp">
+                <label class="form-label">Doc Number (DR/DO/CCID)</label>
+                <input type="text" id="t-doc" class="form-control" placeholder="Leave blank to auto-generate">
+              </div>
+              <div class="col-md-6" id="site-id-grp">
+                <label class="form-label">Site ID <span class="text-danger">*</span></label>
+                <select id="t-site-id" class="form-select"><option value="">Select Site ID...</option></select>
+              </div>
+              <div class="col-md-6" id="site-name-grp">
+                <label class="form-label">Site Name <span class="text-danger">*</span></label>
+                <select id="t-site-name" class="form-select" onchange="handleLocationChange()"><option value="">Select Site Name...</option></select>
+              </div>
+            </div>
+
+            <div class="table-responsive movement-table-wrap border rounded-4 overflow-hidden mb-4">
+              <table class="table align-middle mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th style="min-width: 300px; text-align: left !important;">Item Code / Description <span class="text-danger">*</span></th>
+                    <th width="100">UOM</th>
+                    <th width="120">WBS</th>
+                    <th width="120">Quantity <span class="text-danger">*</span></th>
+                    <th width="140" class="actual-col d-none">Actual Return</th>
+                    <th width="160">Target Status</th>
+                    <th width="50"></th>
+                  </tr>
+                </thead>
+                <tbody id="entry-rows"></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <button class="btn btn-light text-primary text-decoration-none fw-bold px-3 py-2 rounded-pill" onclick="addRow()"><i class="bi bi-plus-circle me-2"></i>Add Another Item</button>
+              <button class="btn btn-primary px-5 py-2 rounded-pill" onclick="submitItems()">Confirm Transaction</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-queue">
+        <div id="queue-container"></div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-inv">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <span class="text-nowrap">Inventory Status</span>
+              <select id="inv-loc-filter" class="form-select form-select-sm" style="min-width: 150px;" onchange="updateSiteFilterUI(); renderStock();">
+                <option value="ALL">All Locations</option>
+              </select>
+              <select id="inv-site-filter" class="form-select form-select-sm" style="min-width: 150px;" onchange="renderStock()">
+                <option value="ALL">All Sites</option>
+              </select>
+            </div>
+            <div class="input-group input-group-sm" style="max-width: 250px;">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+              <input type="text" id="inv-search" class="form-control border-start-0" placeholder="Search items..." onkeyup="renderStock()">
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Asset Details</th>
+                    <th class="text-center" style="background-color: #fff7ed; color: var(--accent);">Central WH</th>
+                    <th class="text-center">Location Stock</th>
+                    <th class="text-center">Site Stock</th>
+                  </tr>
+                </thead>
+                <tbody id="stock-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="tab-hist">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header">Activity & History</div>
+          <div class="card-body">
+            <div class="filter-section border-0 shadow-sm bg-light">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Search</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" id="hist-search" class="form-control border-start-0" placeholder="Search Logs..." onkeyup="logDisplayLimit = 10; renderLogs();">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Date From</label>
+                  <input type="date" id="date-from" class="form-control" onchange="logDisplayLimit = 10; renderLogs();">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Date To</label>
+                  <input type="date" id="date-to" class="form-control" onchange="logDisplayLimit = 10; renderLogs();">
+                </div>
+                <div class="col-md-3">
+                  <button class="btn btn-outline-secondary w-100 bg-white" style="padding: 12px 16px; border-radius: 12px; font-weight: 600; border-color: #e2e8f0; color: #475569;" onclick="clearHistFilters()">Clear Filters</button>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive border rounded-4 overflow-hidden mt-4">
+              <table class="table table-hover mb-0" style="white-space: nowrap;">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>Location/Site</th>
+                    <th>Item Details</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                    <th>Before</th>
+                    <th>After</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="log-list"></tbody>
+              </table>
+            </div>
+            <div class="text-center mt-3" id="load-more-container" style="display: none;">
+              <button class="btn btn-light text-primary fw-bold rounded-pill shadow-sm px-4" onclick="loadMoreLogs()">Show Older Entries <i class="bi bi-chevron-down ms-1"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="pwdModal" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0" style="border-radius: 24px;">
+      <div class="modal-body p-5">
+        <h4 class="fw-bold mb-2">Secure Your Account</h4>
+        <div class="mb-3"><label class="form-label">New Password</label><input type="password" id="p1" class="form-control" placeholder="••••••••" onkeyup="checkReq()"></div>
+        <div class="mb-4"><label class="form-label">Confirm Password</label><input type="password" id="p2" class="form-control" placeholder="••••••••"></div>
+        <div class="p-4 bg-light rounded-4 mb-4">
+          <div id="r-cap" class="text-danger small mb-2 d-flex align-items-center"><i class="bi bi-x-circle me-2"></i> At least one capital letter</div>
+          <div id="r-num" class="text-danger small mb-2 d-flex align-items-center"><i class="bi bi-x-circle me-2"></i> At least one number</div>
+          <div id="r-len" class="text-danger small d-flex align-items-center"><i class="bi bi-x-circle me-2"></i> At least 8 characters</div>
+        </div>
+        <button id="p-btn" class="btn btn-primary w-100 py-3" onclick="savePwd()" disabled>Update & Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let master = { inventory: [], logs: [], masterlist: [], dropdowns: { clients: [], locations: [], siteIds: [], sites: [], siteMap: {} }, pending: [] };
+  let currentUser = "";
+  let userRole = "";
+  let locAccess = "";
+  let siteAccess = "";
+  let logDisplayLimit = 10;
+  const SCRIPT_URL = "<?= scriptUrl ?>";
+  
+  window.onload = () => { 
+    google.script.run.withSuccessHandler(base64 => {
+      if(base64) {
+        document.getElementById('login-logo-img').src = base64;
+        document.getElementById('nav-logo-img').src = base64;
+      }
+    }).getLogoSafe();
+    if (localStorage.getItem('inventoryUser')) { 
+      currentUser = localStorage.getItem('inventoryUser'); 
+      userRole = localStorage.getItem('inventoryRole') || 'team leader';
+      locAccess = localStorage.getItem('inventoryLoc') || '';
+      siteAccess = localStorage.getItem('inventorySites') || '';
+      startApp(); 
+    } else {
+      toggle(false); 
+      document.getElementById('login-section').style.display = 'flex';
+    }
+  };
+  window.onclick = (e) => { if (!e.target.closest('.dropdown-search-wrap')) closeAllDrops(); };
+
+  function toggle(s) { document.getElementById('loader').style.display = s?'flex':'none'; }
+
+  function doLogin() {
+    const user = document.getElementById('l-user').value;
+    const pass = document.getElementById('l-pass').value;
+    if (!user || !pass) return Swal.fire('Error', 'Please enter your credentials.', 'error');
+
+    toggle(true);
+    google.script.run
+      .withSuccessHandler(res => {
+        if(res.success) { 
+          currentUser = res.fullName; 
+          userRole = res.role;
+          locAccess = res.locAccess;
+          siteAccess = res.siteAccess;
+          
+          if(res.isNew) {
+            toggle(false);
+            new bootstrap.Modal(document.getElementById('pwdModal')).show(); 
+          } else { 
+            localStorage.setItem('inventoryUser', currentUser); 
+            localStorage.setItem('inventoryRole', userRole);
+            localStorage.setItem('inventoryLoc', locAccess);
+            localStorage.setItem('inventorySites', siteAccess);
+            startApp(); 
+          } 
+        } else {
+          toggle(false);
+          Swal.fire('Login Failed', res.error, 'error');
+        }
+      })
+      .withFailureHandler(err => {
+        toggle(false);
+        Swal.fire('Connection Error', 'Please check your internet connection.', 'error');
+      })
+      .loginUser(user, pass);
+  }
+
+  function doLogout() { 
+    localStorage.removeItem('inventoryUser'); 
+    localStorage.removeItem('inventoryRole');
+    localStorage.removeItem('inventoryLoc');
+    localStorage.removeItem('inventorySites');
+    window.top.location.href = SCRIPT_URL; 
+  }
+  
+  function startApp() { 
+    document.getElementById('login-section').style.display = 'none'; 
+    document.getElementById('app-section').style.display = 'block'; 
+    document.getElementById('user-display').innerText = currentUser; 
+    document.getElementById('role-display').innerText = userRole.toUpperCase(); 
+    
+    const actDropdown = document.getElementById('action');
+    if (userRole === 'warehouseman') {
+        actDropdown.innerHTML = `
+            <option value="IN">📥 Stock In (Central WH)</option>
+            <option value="ISSUE">📤 Issuance (To Target Site)</option>
+            <option value="RETURN_CLIENT">📦 Return to Client (From Central)</option>
+        `;
+    } else { // team leader
+        actDropdown.innerHTML = `
+            <option value="USAGE">📤 Daily Usage (From Site)</option>
+            <option value="RETURN_CENTRAL">📦 Return to Central WH</option>
+            <option value="RETURN_CLIENT">📦 Return to Client (From Site)</option>
+        `;
+    }
+    
+    refresh(); 
+  }
+
+  function updateSiteDropdown() {
+    const loc = document.getElementById('t-location').value;
+    const elSite = document.getElementById('t-site-name');
+    const curSite = elSite.value;
+    
+    let siteOptions = master.dropdowns.sites;
+    if (loc) { siteOptions = siteOptions.filter(s => master.dropdowns.siteMap[s] === loc || !master.dropdowns.siteMap[s]); }
+    if (userRole !== 'warehouseman' && siteAccess) {
+        const allowed = siteAccess.split(',').map(s => s.trim());
+        siteOptions = siteOptions.filter(s => allowed.includes(s));
+    }
+    elSite.innerHTML = `<option value="">Select Site Name...</option>` + siteOptions.map(i => `<option value="${i}">${i}</option>`).join('');
+    if (siteOptions.includes(curSite)) elSite.value = curSite; else if (siteOptions.length === 1) elSite.value = siteOptions[0];
+    if (userRole !== 'warehouseman' && siteAccess && siteOptions.length === 1) elSite.disabled = true; else elSite.disabled = false;
+  }
+  
+  function updateSiteFilterUI() {
+    const loc = document.getElementById('inv-loc-filter').value;
+    const elSite = document.getElementById('inv-site-filter');
+    const curSite = elSite.value;
+    let siteOptions = master.dropdowns.sites;
+    if (loc !== 'ALL') { siteOptions = siteOptions.filter(s => master.dropdowns.siteMap[s] === loc || !master.dropdowns.siteMap[s]); }
+    elSite.innerHTML = `<option value="ALL">All Sites</option>` + siteOptions.map(i => `<option value="${i}">${i}</option>`).join('');
+    if (siteOptions.includes(curSite)) elSite.value = curSite;
+  }
+
+  function populateDropdowns() {
+    const fill = (id, arr) => {
+      const el = document.getElementById(id); if(!el) return;
+      const cur = el.value; el.innerHTML = `<option value="">Select...</option>` + arr.map(i => `<option value="${i}">${i}</option>`).join('');
+      if(arr.includes(cur)) el.value = cur;
+    };
+    fill('t-client', master.dropdowns.clients); fill('t-site-id', master.dropdowns.siteIds);
+    
+    const elLoc = document.getElementById('t-location');
+    let locOptions = master.dropdowns.locations;
+    if (userRole !== 'warehouseman' && locAccess) locOptions = [locAccess];
+    
+    const curLoc = elLoc.value;
+    elLoc.innerHTML = `<option value="">Select Location...</option>` + locOptions.map(i => `<option value="${i}">${i}</option>`).join('');
+    if(locOptions.includes(curLoc)) elLoc.value = curLoc; else if(locOptions.length === 1) elLoc.value = locOptions[0];
+    if(userRole !== 'warehouseman' && locAccess) elLoc.disabled = true; else elLoc.disabled = false;
+
+    updateSiteDropdown();
+    
+    const filterLoc = document.getElementById('inv-loc-filter');
+    if (filterLoc) {
+      const curFilter = filterLoc.value; let allOpt = (userRole !== 'warehouseman' && locAccess) ? '' : `<option value="ALL">All Locations</option>`;
+      filterLoc.innerHTML = allOpt + locOptions.map(i => `<option value="${i}">${i}</option>`).join('');
+      if(curFilter && curFilter !== 'ALL' && locOptions.includes(curFilter)) filterLoc.value = curFilter;
+      if(userRole !== 'warehouseman' && locAccess) { filterLoc.value = locAccess; filterLoc.disabled = true; } else { filterLoc.disabled = false; }
+    }
+    updateSiteFilterUI();
+  }
+
+  function refresh(silent = false) {
+    if (!silent) toggle(true);
+    const storedSearches = {};
+    document.querySelectorAll('.dropdown-search-wrap input[type="text"]').forEach(el => {
+      const rid = el.id.split('-')[1]; storedSearches[rid] = el.value;
+    });
+
+    google.script.run
+      .withSuccessHandler(data => { 
+        if (!silent) toggle(false); 
+        master = data; 
+        populateDropdowns();
+        handleActionChange(); 
+        renderStock(); 
+        renderLogs(); 
+        renderQueue(); 
+        handleLocationChange(); 
+        
+        document.querySelectorAll('#entry-rows tr').forEach(r => {
+          const rid = r.id.split('-')[1];
+          if (r.getAttribute('data-manual') !== 'true') {
+            const searchVal = storedSearches[rid] || "";
+            filterRows(rid, searchVal);
+          }
+        });
+        if(!document.getElementById('entry-rows').innerHTML.trim()) addRow(); 
+      })
+      .withFailureHandler(err => { if (!silent) toggle(false); })
+      .getAppData({ fullName: currentUser, role: userRole, locAccess: locAccess, siteAccess: siteAccess });
+  }
+
+  function renderStock() { 
+    const list = document.getElementById('stock-list'); if (!list) return;
+    const term = document.getElementById('inv-search')?.value.toLowerCase() || "";
+    const locFilter = document.getElementById('inv-loc-filter').value;
+    const siteFilter = document.getElementById('inv-site-filter').value;
+    
+    const filtered = master.inventory.filter(i => (i.name.toLowerCase().includes(term) || i.code.toLowerCase().includes(term)));
+
+    list.innerHTML = filtered.length ? filtered.map(i => {
+      let locStock = locFilter === 'ALL' ? '-' : (i.balances[locFilter] || 0);
+      let siteStock = siteFilter === 'ALL' ? '-' : (i.balances[siteFilter] || 0);
+
+      const locStockHtml = locFilter === 'ALL' ? `<span class="text-muted small">Select location</span>` : `<span class="badge" style="background-color: ${locStock < 5 ? '#fee2e2':'#dcfce7'}; color: ${locStock < 5 ? '#991b1b':'#166534'};">${locStock} units</span>`;
+      const siteStockHtml = siteFilter === 'ALL' ? `<span class="text-muted small">Select site</span>` : `<span class="badge" style="background-color: ${siteStock < 5 ? '#fef3c7':'#e0f2fe'}; color: ${siteStock < 5 ? '#92400e':'#0369a1'};">${siteStock} units</span>`;
+
+      return `<tr>
+        <td style="text-align: left !important;">
+          <div class="fw-bold text-dark">${i.code} - ${i.name}</div>
+          <div class="small text-muted">UOM: ${i.uom || 'N/A'}</div>
+        </td>
+        <td class="text-center align-middle"><span class="badge" style="background-color: var(--accent); color: white;">${i.central} units</span></td>
+        <td class="text-center align-middle">${locStockHtml}</td>
+        <td class="text-center align-middle">${siteStockHtml}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" class="text-center py-5 text-muted">No items found</td></tr>'; 
+  }
+
+  function loadMoreLogs() { logDisplayLimit += 10; renderLogs(); }
+  function clearHistFilters() { document.getElementById('hist-search').value = ""; document.getElementById('date-from').value = ""; document.getElementById('date-to').value = ""; logDisplayLimit = 10; renderLogs(); }
+
+  function renderLogs() { 
+    const list = document.getElementById('log-list'); if (!list) return;
+    const term = document.getElementById('hist-search')?.value.toLowerCase() || "";
+    const from = document.getElementById('date-from')?.value;
+    const to = document.getElementById('date-to')?.value;
+
+    const filtered = master.logs.filter(l => {
+      if (userRole !== 'warehouseman') { if (locAccess && l[7] !== locAccess) return false; }
+      const matchSearch = l[1].toLowerCase().includes(term) || l[6].toLowerCase().includes(term) || l[7].toLowerCase().includes(term) || l[8].toLowerCase().includes(term) || l[9].toLowerCase().includes(term);
+      let matchDate = true; const logDate = new Date(l[0]); logDate.setHours(0,0,0,0);
+      if (from) { const fromDate = new Date(from); fromDate.setHours(0,0,0,0); matchDate = matchDate && logDate >= fromDate; }
+      if (to) { const toDate = new Date(to); toDate.setHours(0,0,0,0); matchDate = matchDate && logDate <= toDate; }
+      return matchSearch && matchDate;
+    });
+
+    const loadMoreContainer = document.getElementById('load-more-container');
+    if (filtered.length > logDisplayLimit) { loadMoreContainer.style.display = 'block'; } else { loadMoreContainer.style.display = 'none'; }
+    const displayLogs = filtered.slice(0, logDisplayLimit);
+
+    list.innerHTML = displayLogs.length ? displayLogs.map(l=>{
+      let badgeBg = l[2]=='IN' ? '#dcfce7' : (l[2]=='USAGE' || l[2]=='OUT' || l[2]=='ISSUE' ? '#fee2e2' : '#f3e8ff');
+      let badgeCol = l[2]=='IN' ? '#166534' : (l[2]=='USAGE' || l[2]=='OUT' || l[2]=='ISSUE' ? '#991b1b' : '#6b21a8');
+      
+      let statusBg = l[15]=='Completed' ? '#dcfce7' : '#fef3c7';
+      let statusCol = l[15]=='Completed' ? '#166534' : '#92400e';
+      
+      return `<tr>
+        <td class="small text-muted">${new Date(l[0]).toLocaleDateString()}</td>
+        <td><span class="badge" style="background-color: ${badgeBg}; color: ${badgeCol}; text-transform: uppercase; font-size: 0.65rem;">${l[2].replace("_", " ")}</span></td>
+        <td class="small text-muted">${l[7] || '-'} <br/> ${l[6] || '-'}</td>
+        <td class="small"><strong>${l[8]}</strong><br>${l[9]}</td>
+        <td class="fw-bold">${l[12]}</td>
+        <td><span class="badge" style="background-color: ${statusBg}; color: ${statusCol}; font-size: 0.65rem;">${l[15]}</span></td>
+        <td class="small text-muted">${l[13]}</td>
+        <td class="fw-bold small">${l[14]}</td>
+        <td>${(l[2] === 'RETURN_CLIENT' && l[16]) ? `<a href="${l[16]}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-pdf"></i> Details</a>` : '-'}</td>
+      </tr>`}).join('') : '<tr><td colspan="9" class="text-center py-5 text-muted">No matching records</td></tr>'; 
+  }
+
+  function renderQueue() {
+    const cont = document.getElementById('queue-container');
+    if (!master.pending || !master.pending.length) {
+      cont.innerHTML = `<div class="card p-5 text-center text-muted fw-bold border-0 shadow-sm rounded-4">No pending items requiring your action right now.</div>`; return;
+    }
+
+    let html = '';
+    
+    if (userRole === 'warehouseman') {
+       let grouped = {};
+       master.pending.forEach(p => {
+          let key = `${p.location} - ${p.sitename}`;
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(p);
+       });
+       
+       let accId = 0;
+       html += `<div class="accordion shadow-sm" id="pendingAcc" style="border-radius: 16px; overflow: hidden;">`;
+       for (let key in grouped) {
+          accId++;
+          html += `
+          <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header" id="heading${accId}">
+              <button class="accordion-button collapsed fw-bold text-dark py-3" type="button" data-bs-toggle="collapse" data-bs-target="#col${accId}" style="background-color: #fff;">
+                 <i class="bi bi-box-seam me-2 text-accent"></i> ${key} 
+                 <span class="badge bg-danger ms-auto rounded-pill">${grouped[key].length}</span>
+              </button>
+            </h2>
+            <div id="col${accId}" class="accordion-collapse collapse" data-bs-parent="#pendingAcc">
+              <div class="accordion-body p-0 bg-light">
+                 <div class="list-group list-group-flush">
+          `;
+          grouped[key].forEach(p => {
+             html += `
+                 <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom bg-transparent">
+                    <div>
+                       <div class="fw-bold text-primary mb-1">${p.itemCode} - ${p.itemName}</div>
+                       <div class="small text-muted">ID: ${p.id} &bull; Qty: <strong class="text-dark">${p.qty} ${p.unit}</strong> &bull; By: ${p.requestor}</div>
+                    </div>
+                    <button class="btn btn-sm btn-success fw-bold px-3 shadow-sm rounded-pill" onclick="processQueueAction('${p.id}', 'Confirm Return')"><i class="bi bi-check2"></i> Confirm Receipt</button>
+                 </div>
+             `;
+          });
+          html += `</div></div></div></div>`;
+       }
+       html += `</div>`;
+    } else {
+       master.pending.forEach(p => {
+         html += `
+           <div class="card mb-3 border-0 shadow-sm" style="border-left: 4px solid var(--accent); border-radius: 16px;">
+             <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+               <div>
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill"><i class="bi bi-truck me-1"></i> Inbound Delivery</span>
+                     <span class="small text-muted fw-medium">${p.date}</span>
+                  </div>
+                  <div class="fw-bold text-dark fs-5 mb-1">${p.itemCode} - ${p.itemName}</div>
+                  <div class="small text-muted">From: <strong>Central WH</strong> &nbsp;&bull;&nbsp; Target: <strong>${p.sitename || p.location}</strong> &nbsp;&bull;&nbsp; Ref: ${p.id}</div>
+               </div>
+               <div class="text-end d-flex align-items-center gap-4 bg-light p-3 rounded-4 border border-light-subtle">
+                  <div class="text-start">
+                     <div class="small text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Quantity</div>
+                     <div class="fw-bold fs-4 text-dark lh-1">${p.qty} <span class="fs-6 fw-normal text-muted">${p.unit}</span></div>
+                  </div>
+                  <button class="btn btn-success fw-bold shadow-sm rounded-pill px-4 py-2" onclick="processQueueAction('${p.id}', 'Confirm Receipt')"><i class="bi bi-check2-circle me-1"></i> Receive</button>
+               </div>
+             </div>
+           </div>
+         `;
+       });
+    }
+    
+    cont.innerHTML = html;
+  }
+
+  function processQueueAction(reqId, action) {
+    Swal.fire({ title: `Confirm ${action}`, icon: 'question', showCancelButton: true, confirmButtonColor: '#22c55e', confirmButtonText: `Yes, proceed` }).then(res => {
+      if (res.isConfirmed) {
+        toggle(true);
+        google.script.run.withSuccessHandler(r => {
+          toggle(false); if(r.success) { Swal.fire('Success', 'Action processed.', 'success'); refresh(); } else { Swal.fire('Error', r.error, 'error'); }
+        }).processQueueAction(reqId, action, { fullName: currentUser, role: userRole });
+      }
+    });
+  }
+
+  function closeAllDrops() { document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none'); }
+  
+  function handleActionChange() {
+    const act = document.getElementById('action').value;
+    
+    const isCentralDirect = (userRole === 'warehouseman' && (act === 'IN' || act === 'RETURN_CLIENT'));
+    
+    document.getElementById('client-grp').style.display = isCentralDirect ? 'none' : 'block';
+    document.getElementById('loc-grp').style.display = isCentralDirect ? 'none' : 'block';
+    document.getElementById('site-id-grp').style.display = isCentralDirect ? 'none' : 'block';
+    document.getElementById('site-name-grp').style.display = isCentralDirect ? 'none' : 'block';
+    
+    if (!isCentralDirect) populateDropdowns();
+
+    document.querySelectorAll('.i-qty').forEach(q => {
+      const row = q.closest('tr');
+      const currentStock = row.querySelector('.i-status').getAttribute('data-cur');
+      if (act === 'RETURN_CLIENT') {
+        q.disabled = true; q.value = currentStock !== null ? currentStock : "";
+      } else {
+        if (q.disabled) q.value = 1; q.disabled = false;
+      }
+    });
+
+    document.querySelectorAll('.actual-col').forEach(col => {
+      if (act === 'RETURN_CLIENT') col.classList.remove('d-none');
+      else { col.classList.add('d-none'); const input = col.querySelector('.i-actual-qty'); if (input) input.value = ''; }
+    });
+    
+    handleLocationChange();
+  }
+
+  function handleLocationChange() {
+    const act = document.getElementById('action').value;
+    const isCentralDirect = (userRole === 'warehouseman' && (act === 'IN' || act === 'RETURN_CLIENT'));
+    
+    if (!isCentralDirect) updateSiteDropdown();
+    
+    const tLoc = document.getElementById('t-location').value;
+    const tSite = document.getElementById('t-site-name').value;
+    const isTargetSite = tSite && tSite.trim() !== "";
+    
+    document.querySelectorAll('#entry-rows tr').forEach(r => {
+      if(r.getAttribute('data-manual') !== 'true') {
+        const iCode = r.querySelector('.i-code').value;
+        if(iCode) {
+          const invItem = master.inventory.find(i => i.code === iCode);
+          let stock = 0;
+          let labelText = "N/A";
+          
+          if(invItem) {
+            if (isCentralDirect || act === 'ISSUE') {
+                stock = invItem.central || 0;
+                labelText = "in Central WH";
+            } else {
+                if (isTargetSite) { stock = invItem.balances[tSite] || 0; labelText = "at Site"; }
+                else if (tLoc) { stock = invItem.balances[tLoc] || 0; labelText = "at Location"; }
+            }
+          }
+          
+          r.querySelector('.i-status').innerHTML = `<span class="badge" style="background-color: ${stock < 5 ? '#fee2e2':'#dcfce7'}; color: ${stock < 5 ? '#991b1b':'#166534'};">${stock} ${labelText}</span>`;
+          r.querySelector('.i-status').setAttribute('data-cur', stock);
+          if (act === 'RETURN_CLIENT') r.querySelector('.i-qty').value = stock;
+        }
+      }
+    });
+  }
+
+  function addRow() {
+    const rid = Date.now();
+    const tr = document.createElement('tr');
+    tr.id = `row-${rid}`;
+    const act = document.getElementById('action').value;
+    const disabledState = act === 'RETURN_CLIENT' ? 'disabled' : '';
+    const valState = act === 'RETURN_CLIENT' ? '' : '1';
+    const actualColState = act === 'RETURN_CLIENT' ? '' : 'd-none';
+
+    tr.innerHTML = `
+      <td style="text-align: left !important;">
+        <div class="input-group dropdown-search-wrap" id="dd-wrap-${rid}">
+          <div class="form-control selected-display bg-light border-0" onclick="toggleMenu('${rid}')"><span class="sel-label text-muted fw-bold">Select Masterlist Item...</span></div>
+          <div class="dropdown-menu border-0 shadow-lg" id="menu-${rid}">
+            <div class="p-2 sticky-top bg-white border-bottom"><input type="text" id="search-${rid}" class="form-control form-control-sm bg-light border-0" placeholder="Search Masterlist..." onkeyup="filterRows('${rid}', this.value)"></div>
+            <div class="opt-cont"></div>
+          </div>
+          <span class="input-group-text border-0" style="background-color: #fff7ed; color: var(--accent); cursor: pointer;" onclick="toggleMode('${rid}', true)"><i class="bi bi-plus-lg"></i></span>
+        </div>
+        <div class="input-group d-none" id="man-wrap-${rid}">
+          <input type="text" class="form-control form-control-sm bg-light border-0 man-in-code w-25" placeholder="Code">
+          <input type="text" class="form-control form-control-sm bg-light border-0 man-in-name w-50" placeholder="Description">
+          <span class="input-group-text bg-danger border-0" onclick="toggleMode('${rid}', false)"><i class="bi bi-x text-white"></i></span>
+        </div>
+        <input type="hidden" class="i-code">
+        <input type="hidden" class="i-val">
+      </td>
+      <td><input type="text" class="form-control form-control-sm bg-light border-0 i-uom" readonly placeholder="-"></td>
+      <td><input type="text" class="form-control form-control-sm bg-light border-0 i-wbs" readonly placeholder="-"></td>
+      <td><input type="number" class="form-control form-control-sm i-qty fw-bold text-center" style="border-color: #e2e8f0;" value="${valState}" min="1" ${disabledState}></td>
+      <td class="actual-col ${actualColState}"><input type="number" class="form-control form-control-sm i-actual-qty text-center" style="border-color: #e2e8f0;" placeholder="Optional" min="0"></td>
+      <td class="i-status small">-</td>
+      <td><button class="btn btn-link text-danger p-0" onclick="this.closest('tr').remove(); if(!document.getElementById('entry-rows').innerHTML.trim()) addRow();"><i class="bi bi-trash"></i></button></td>`;
+    document.getElementById('entry-rows').appendChild(tr);
+    renderRowOpts(rid, master.masterlist);
+  }
+
+  function toggleMenu(rid) {
+    const m = document.getElementById(`menu-${rid}`);
+    const vis = m.style.display === 'block';
+    closeAllDrops();
+    if(!vis) { m.style.display = 'block'; setTimeout(() => document.getElementById(`search-${rid}`).focus(), 10); }
+  }
+
+  function filterRows(rid, term) { 
+    const filtered = master.masterlist.filter(i => i.name.toLowerCase().includes(term.toLowerCase()) || i.code.toLowerCase().includes(term.toLowerCase())); 
+    renderRowOpts(rid, filtered); 
+  }
+  
+  function renderRowOpts(rid, list) { 
+    const cont = document.querySelector(`#row-${rid} .opt-cont`); 
+    if (!cont) return;
+    cont.innerHTML = list.map(i => {
+      const codeSafe = i.code.replace(/'/g, "\\'");
+      const nameSafe = i.name.replace(/'/g, "\\'");
+      const uomSafe = (i.uom||'').replace(/'/g, "\\'");
+      const wbsSafe = (i.wbs||'').replace(/'/g, "\\'");
+      return `<div class="dropdown-item" onclick="pick('${rid}', '${codeSafe}', '${nameSafe}', '${uomSafe}', '${wbsSafe}')">
+      <div class="fw-bold text-primary" style="font-size: 0.85rem;">${i.code}</div>
+      <div class="text-muted" style="font-size: 0.75rem;">${i.name}</div>
+    </div>`}).join(''); 
+  }
+
+  function pick(rid, code, name, uom, wbs, silent = false) {
+    const r = document.getElementById(`row-${rid}`);
+    if (!r) return;
+    const label = r.querySelector('.sel-label');
+    label.innerHTML = `<strong>${code}</strong> - ${name}`; label.classList.remove('text-muted'); label.classList.add('text-dark');
+    r.querySelector('.i-code').value = code; r.querySelector('.i-val').value = name;
+    r.querySelector('.i-uom').value = uom; r.querySelector('.i-wbs').value = wbs;
+    
+    handleLocationChange(); 
+    if (!silent) closeAllDrops();
+  }
+
+  function toggleMode(rid, manual) {
+    const r = document.getElementById(`row-${rid}`);
+    r.querySelector(`#dd-wrap-${rid}`).classList.toggle('d-none', manual);
+    r.querySelector(`#man-wrap-${rid}`).classList.toggle('d-none', !manual);
+    r.setAttribute('data-manual', manual);
+    
+    const uomInput = r.querySelector('.i-uom'); const wbsInput = r.querySelector('.i-wbs');
+    if(!manual) { 
+      r.querySelector('.i-code').value = ''; r.querySelector('.i-val').value = ''; 
+      const label = r.querySelector('.sel-label'); label.innerText = 'Select Masterlist Item...'; label.classList.add('text-muted'); label.classList.remove('text-dark');
+      uomInput.readOnly = true; wbsInput.readOnly = true; uomInput.value = ''; wbsInput.value = '';
+      uomInput.classList.add('bg-light'); uomInput.classList.add('border-0'); wbsInput.classList.add('bg-light'); wbsInput.classList.add('border-0');
+      r.querySelector('.i-status').innerText = '-'; r.querySelector('.i-status').removeAttribute('data-cur');
+      if (document.getElementById('action').value === 'RETURN_CLIENT') r.querySelector('.i-qty').value = '';
+    } else {
+      uomInput.readOnly = false; wbsInput.readOnly = false; uomInput.placeholder = "Input UOM"; wbsInput.placeholder = "Input WBS";
+      uomInput.classList.remove('bg-light'); uomInput.classList.remove('border-0'); wbsInput.classList.remove('bg-light'); wbsInput.classList.remove('border-0');
+      uomInput.value = ''; wbsInput.value = '';
+      r.querySelector('.i-status').innerHTML = `<span class="badge bg-info">Manual Item</span>`;
+      r.querySelector('.i-status').setAttribute('data-cur', 0);
+      if (document.getElementById('action').value === 'RETURN_CLIENT') r.querySelector('.i-qty').value = '';
+    }
+  }
+
+  function submitItems() {
+    const action = document.getElementById('action').value;
+    const isCentralDirect = (userRole === 'warehouseman' && (action === 'IN' || action === 'RETURN_CLIENT'));
+    
+    let client = document.getElementById('t-client').value;
+    let location = document.getElementById('t-location').value;
+    let siteId = document.getElementById('t-site-id').value;
+    let siteName = document.getElementById('t-site-name').value;
+    const refDoc = document.getElementById('t-doc').value;
+
+    if (isCentralDirect) {
+        client = "-"; location = "Central WH"; siteId = "-"; siteName = "-";
+    } else {
+       if(!client) return Swal.fire('Missing Field', 'Please specify a Client Name.', 'error');
+       if(!location) return Swal.fire('Missing Field', 'Please specify a Warehouse Location.', 'error');
+       if(!siteId) return Swal.fire('Missing Field', 'Please specify a Site ID.', 'error');
+       if(!siteName) return Swal.fire('Missing Field', 'Please specify a Site Name.', 'error');
+    }
+
+    const items = [];
+    let ok = true;
+    let missingSelection = false;
+
+    document.querySelectorAll('#entry-rows tr').forEach(r => {
+      const isMan = r.getAttribute('data-manual') === 'true';
+      const code = isMan ? r.querySelector('.man-in-code').value.trim() : r.querySelector('.i-code').value;
+      const name = isMan ? r.querySelector('.man-in-name').value.trim() : r.querySelector('.i-val').value;
+      const uom = r.querySelector('.i-uom').value.trim();
+      const wbs = r.querySelector('.i-wbs').value.trim();
+      if(!code && !name) { missingSelection = true; return; }
+
+      let qty = 1; let actualReturnQty = null; let currentStock = parseInt(r.querySelector('.i-status').getAttribute('data-cur')) || 0;
+      
+      if (action === "RETURN_CLIENT") {
+        if (isMan || currentStock <= 0) { 
+           let tLabel = (userRole === 'warehouseman') ? 'Central WH' : (siteName ? siteName : location);
+           Swal.fire('Empty Stock', `No stock in ${tLabel} for ${name || code}`, 'warning'); ok = false; return; 
+        }
+        qty = currentStock; actualReturnQty = r.querySelector('.i-actual-qty').value;
+      } else { qty = parseInt(r.querySelector('.i-qty').value); }
+      
+      if(!isMan && (action === "USAGE" || action === "ISSUE" || action === "RETURN_CENTRAL") && qty > currentStock) { 
+          let tLabel = (action === "ISSUE") ? 'Central WH' : (siteName ? siteName : location);
+          Swal.fire('Stock Alert', `Not enough units in ${tLabel} for ${name || code}. Available: ${currentStock}`, 'warning'); ok = false; 
+      }
+      
+      if (ok) items.push({code, name, uom, wbs, qty, actualReturnQty});
+    });
+
+    if (missingSelection) return Swal.fire('Required Field', 'Please provide Item Code/Description for all rows.', 'error');
+    if (!ok) return;
+    if(!items.length) return Swal.fire('Incomplete', 'Please select at least one item.', 'info');
+
+    let actionLabel = action.replace("_", " ");
+    Swal.fire({ title: 'Confirm ' + actionLabel, text: `Confirm processing ${items.length} item(s)?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, proceed', confirmButtonColor: '#2563eb' }).then((result) => {
+      if (result.isConfirmed) {
+        toggle(true);
+        google.script.run
+          .withSuccessHandler(res => { 
+            toggle(false); 
+            if(res.success) { Swal.fire('Success', 'Transaction logged successfully.', 'success'); document.getElementById('entry-rows').innerHTML=''; document.getElementById('t-doc').value = ''; logDisplayLimit = 10; refresh(); } 
+            else { Swal.fire('Error', res.error, 'error'); }
+          }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Transaction failed.', 'error'); })
+          .processBulkTransaction({ user: currentUser, role: userRole, location, siteId, siteName, action, client, refDoc, items });
+      }
+    });
+  }
+
+  function checkReq() {
+    const v = document.getElementById('p1').value; const hasCap = /[A-Z]/.test(v); const hasNum = /[0-9]/.test(v); const isLong = v.length >= 8;
+    const updateUI = (id, met, tM, tU) => { 
+      const el = document.getElementById(id); el.className = met ? 'text-success small mb-2 d-flex align-items-center' : 'text-danger small mb-2 d-flex align-items-center'; el.innerHTML = met ? `<i class="bi bi-check-circle-fill me-2"></i> ${tM}` : `<i class="bi bi-x-circle me-2"></i> ${tU}`; 
+    };
+    updateUI('r-cap', hasCap, 'Capital letter OK', 'At least one capital letter'); updateUI('r-num', hasNum, 'Number OK', 'At least one number'); updateUI('r-len', isLong, 'Length OK', 'At least 8 characters');
+    document.getElementById('p-btn').disabled = !(hasCap && hasNum && isLong);
+  }
+
+  function savePwd() {
+    const p1 = document.getElementById('p1').value; const p2 = document.getElementById('p2').value;
+    if(p1 !== p2) return Swal.fire('Mismatch', 'Passwords do not match.', 'error');
+    toggle(true);
+    google.script.run.withSuccessHandler(res => { toggle(false); if(res === "SUCCESS") { localStorage.setItem('inventoryUser', currentUser); window.top.location.href = SCRIPT_URL; } else { Swal.fire('Error', res, 'error'); } }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Update failed.', 'error'); }).finalizePassword(currentUser, p1);
+  }
+
+  function doRecover() {
+    Swal.fire({ title: 'Reset Password', input: 'text', inputLabel: 'Enter your account identifier', inputPlaceholder: 'Name or Email', showCancelButton: true, confirmButtonText: 'Submit Request' }).then((result) => {
+      if (result.value) { toggle(true); google.script.run.withSuccessHandler(res => { toggle(false); Swal.fire('Account Info', res, 'info'); }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Recovery request failed.', 'error'); }).recoverPassword(result.value); }
+    });
+  }
+</script>
+</body>
+</html>
