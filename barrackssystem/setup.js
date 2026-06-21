@@ -1,25 +1,25 @@
 function initializeSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = [
-    { 
-      name: 'Inventory', 
+    {
+      name: 'SKU Masterlist',
       head: ['Item Code', 'Item Description', 'UOM', 'NCR Hub', 'Makati Site', 'Taguig Site', 'Visayas Hub', 'Cebu Site'],
       data: [
-        ['ITM-001', 'Dell Latitude 5420 Laptop', 'pc', 70, 30, 0, 80, 20],
-        ['ITM-002', 'Logitech Wireless Mouse', 'pc', 100, 50, 50, 60, 40],
-        ['CBL-100', 'Cat6 Ethernet Cable (300m Box)', 'box', 50, 0, 0, 10, 0]
+        ['ITM-001', 'Dell Latitude 5420 Laptop', 'pc', 30, 30, 0, 20, 20],
+        ['ITM-002', 'Logitech Wireless Mouse', 'pc', 100, 50, 50, 40, 40],
+        ['CBL-100', 'Cat6 Ethernet Cable (300m Box)', 'box', 50, 30, 20, 10, 10]
       ]
     },
-    { 
-      name: 'Requests', 
-      head: ['Req ID', 'Date', 'User Name', 'Role', 'Action', 'Target Location', 'Target Site', 'Item Code', 'Item Description', 'UOM', 'Qty', 'Status', 'Remarks'] 
+    {
+      name: 'Requests',
+      head: ['Req ID', 'Date', 'User Name', 'Role', 'Action', 'Target Location', 'Target Site', 'Item Code', 'Item Description', 'UOM', 'Qty', 'Status', 'Remarks']
     },
     {
       name: 'Logs',
-      head: ['Timestamp', 'Doc Number', 'Action', 'Client Name', 'User', 'Site ID', 'Site Name', 'Warehouse Location', 'Item Code', 'Item Description', 'UOM', 'WBS', 'Qty', 'Balance Before', 'Balance After', 'Status', 'PDF Link', 'PO Number', 'Unit Price', 'Subtotal']
+      head: ['Timestamp', 'Doc Number', 'Action', 'Client Name', 'User', 'Site ID', 'Site Name', 'Warehouse Location', 'Item Code', 'Item Description', 'UOM', 'WBS', 'Qty', 'Balance Before', 'Balance After', 'Status', 'PDF Link', 'PO Number', 'Source Doc', 'Unit Price', 'Subtotal', 'Destination Location', 'Destination Site']
     },
-    { 
-      name: 'Users', 
+    {
+      name: 'Users',
       head: ['Email', 'Full Name', 'Password', 'Salt', 'Role', 'Location Access', 'Site Access'],
       data: [
         ['admin@test.com', 'Admin User', 'temp123', '', 'admin', '', ''],
@@ -28,12 +28,12 @@ function initializeSheets() {
         ['tl2@test.com', 'Charlie TeamLeader', 'temp123', '', 'team leader', 'Visayas Hub', 'Cebu Site, Mandaue Site']
       ]
     },
-    { 
-      name: 'Discrepancies', 
-      head: ['Timestamp', 'Doc ID', 'User', 'Warehouse Location', 'Site Name', 'Item Code', 'Item Description', 'System Qty', 'Actual Returned Qty'] 
+    {
+      name: 'Discrepancies',
+      head: ['Timestamp', 'Doc ID', 'User', 'Warehouse Location', 'Site Name', 'Item Code', 'Item Description', 'System Qty', 'Actual Returned Qty']
     },
-    { 
-      name: 'Dropdowns', 
+    {
+      name: 'Dropdowns',
       head: ['Clients', 'Warehouse Locations', 'Site IDs', 'Site Names', 'Mapped Location', 'WBS'],
       data: [
         ['Acme Corp', 'NCR Hub', 'S-001', 'Makati Site', 'NCR Hub', 'WBS-991'],
@@ -67,7 +67,7 @@ function initializeSheets() {
       sheet.getRange(1, 1, 1, sh.head.length).setValues([sh.head])
            .setFontWeight("bold").setBackground("#0f172a").setFontColor("white");
     }
-    
+
     if(sheet.getFrozenRows() === 0) sheet.setFrozenRows(1);
 
     if (currentRows <= 1 && sh.data && sh.data.length > 0) {
