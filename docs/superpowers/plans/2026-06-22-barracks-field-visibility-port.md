@@ -58,14 +58,14 @@ git commit -m "Rename entry-table column header to 'Inventory On Hand'"
 
 ---
 
-### Task 2: Hide `doc-grp` entirely for `RECEIVE_DR` and `RETURN_CLIENT`
+### Task 2: Hide `doc-grp` entirely for `RECEIVE_DR` only (not `RETURN_CLIENT`)
 
 **Files:**
 - Modify: `src/Index.html`, inside `handleActionChange()` (around lines 1260-1268, in the `if (userRole === 'admin') { ... } else { ... }` block).
 
 **Interfaces:**
-- Consumes: existing `isReturn` and `isReceive` flags computed earlier in the same function.
-- Produces: when `act === 'RECEIVE_DR'` or `act === 'RETURN_CLIENT'`, the `#doc-grp` column (Doc Number label + input + auto-generate hint) is fully hidden. For all other actions, the prior behavior is preserved exactly.
+- Consumes: existing `isReceive` flag computed earlier in the same function.
+- Produces: when `act === 'RECEIVE_DR'`, the `#doc-grp` column (Doc Number label + input + auto-generate hint) is fully hidden. For `RETURN_CLIENT` and every other action, the existing behavior is preserved (RETURN_CLIENT keeps the label + auto-generate hint visible for non-admin, matching Barracks). Task 4 will extend this hide to cover `USAGE` once that action becomes source-doc-based.
 
 - [ ] **Step 1: Locate the admin/non-admin doc block**
 
@@ -87,9 +87,10 @@ Find this block in `handleActionChange()`:
 Replace the block with:
 
 ```js
-    // Hide the whole Doc Number group when the action does not collect a doc
-    // (RECEIVE_DR auto-references the DR; RETURN_CLIENT pulls doc from the source-doc selector).
-    document.getElementById('doc-grp').classList.toggle('d-none', isReceive || isReturn);
+    // Hide the whole Doc Number group only when the action has no doc concept at all.
+    // RECEIVE_DR auto-references the DR. RETURN_CLIENT still shows the label + auto-generate
+    // hint (matches Barracks), so do NOT include it here. USAGE will be added in Task 4.
+    document.getElementById('doc-grp').classList.toggle('d-none', isReceive);
 
     if (userRole === 'admin') {
         document.getElementById('t-doc').classList.remove('d-none');
@@ -104,8 +105,8 @@ Replace the block with:
 - [ ] **Step 3: Manual verification**
 
 After `clasp push`, log in and confirm:
-- As warehouseman, select `RECEIVE_DR`: above the items table you see ONLY the DR ID dropdown (no Doc Number label/input/hint, no Warehouse Location, no Site, no Client, no WBS).
-- As warehouseman, select `RETURN_CLIENT`: you see the Source Doc dropdown and MRC field but no Doc Number group.
+- As warehouseman, select `RECEIVE_DR`: above the items table you see ONLY the DR ID dropdown and the PO Number (read-only, auto-populated when a DR is picked). No Doc Number label/input/hint, no Warehouse Location, no Site, no Client, no WBS.
+- As warehouseman, select `RETURN_CLIENT`: you see the Source Doc dropdown, MRC field, AND the Doc Number group (label + "Document ID will be auto-generated" hint for non-admin; required input for admin). Loc/Site/Client/Site-ID/WBS hidden until a source doc is selected.
 - As admin, select `DR_CREATE`: Doc Number field is visible and required as before.
 - As admin, select `PURCHASE_LOG`: Doc Number field is visible.
 - As team leader, select `USAGE`: Doc Number group still visible (will be cleaned up in Task 4).
@@ -115,7 +116,7 @@ After `clasp push`, log in and confirm:
 
 ```bash
 git add src/Index.html
-git commit -m "Hide Doc Number group for RECEIVE_DR and RETURN_CLIENT"
+git commit -m "Hide Doc Number group for RECEIVE_DR (keep visible for RETURN_CLIENT)"
 ```
 
 ---
@@ -224,21 +225,21 @@ Replace with:
     const hideLocFields = (isReceive || isSourceDocBased);
 ```
 
-- [ ] **Step 2: Update the Task 2 doc-grp hide to use the new flag**
+- [ ] **Step 2: Extend the Task 2 doc-grp hide to also cover USAGE**
 
 Find the line added in Task 2:
 
 ```js
-    document.getElementById('doc-grp').classList.toggle('d-none', isReceive || isReturn);
+    document.getElementById('doc-grp').classList.toggle('d-none', isReceive);
 ```
 
 Replace with:
 
 ```js
-    document.getElementById('doc-grp').classList.toggle('d-none', isReceive || isSourceDocBased);
+    document.getElementById('doc-grp').classList.toggle('d-none', isReceive || isUsage);
 ```
 
-This ensures USAGE also hides the Doc Number group (it doesn't collect a doc — the source-doc selector is the entry point).
+This hides the Doc Number group for USAGE (matches Barracks). RETURN_CLIENT is intentionally left visible — Barracks shows the label + auto-generate hint for non-admin there.
 
 - [ ] **Step 3: In `handleLocationChange()`, call `populateSourceDocs()` for `USAGE` too**
 
@@ -528,11 +529,11 @@ For each action, confirm the visible field set matches the spec's table (`docs/s
 
 Per-action expected fields:
 
-- `RECEIVE_DR` (warehouseman): DR ID only.
+- `RECEIVE_DR` (warehouseman): DR ID + PO Number (read-only, auto-populated after DR selection). Nothing else above the items table.
 - `DR_CREATE` (admin): Warehouse Location, Site Name, Site ID, Client, WBS, Doc Number (required), PO dropdown + "PO to follow", admin paste box; 10 rows preloaded.
 - `PURCHASE_LOG` (admin): same as DR_CREATE plus Unit Price / Subtotal columns.
 - `USAGE` (team leader): Source Doc only initially; after pick, Loc/Site/Site ID/Client/WBS appear locked, items populate.
-- `RETURN_CLIENT` (warehouseman): Source Doc + MRC initially; after pick, Loc/Site/Site ID/Client/WBS appear locked, Actual Quantity column visible.
+- `RETURN_CLIENT` (warehouseman): Source Doc + MRC + Doc Number group (label + auto-generate hint for non-admin) initially; after pick, Loc/Site/Site ID/Client/WBS appear locked, Actual Quantity column visible.
 - `ISSUE` (warehouseman): Loc, Site Name, Site ID, Client, WBS, Doc Number (auto-generate hint); Add Another Item visible.
 - `TRANSFER_WH` (warehouseman): Loc, Site Name (source), Site ID, Client, WBS, Doc Number (auto-generate), Target Loc, Target Site; Add Another Item visible.
 - `RETURN_WH` (team leader): Loc, Site Name (source), Site ID, Client, WBS, Doc Number (auto-generate); Add Another Item visible.
