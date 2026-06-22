@@ -1278,11 +1278,9 @@
     // Hide the 'Add Another Item' button for automated item flows
     const addRowBtn = document.getElementById('btn-add-row');
     if (addRowBtn) {
-        if (isReturn || isReceive) {
-            addRowBtn.style.display = 'none';
-        } else {
-            addRowBtn.style.display = 'inline-block';
-        }
+        const hideAddRow = isReturn || isReceive
+            || act === 'DR_CREATE' || act === 'PURCHASE_LOG' || act === 'USAGE';
+        addRowBtn.style.display = hideAddRow ? 'none' : 'inline-block';
     }
     
     populateDropdowns();
