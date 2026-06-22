@@ -620,6 +620,11 @@
               const locs = locAccess.split(',').map(s => s.trim());
               options = options.filter(d => locs.includes(master.receiptDocs[d].location));
           }
+      } else if (act === 'USAGE') {
+          if (userRole === 'team leader' && siteAccess) {
+              const sites = siteAccess.split(',').map(s => s.trim());
+              options = options.filter(d => sites.includes(master.receiptDocs[d].site));
+          }
       } else if (loc) {
           options = options.filter(d => master.receiptDocs[d].location === loc);
       }
@@ -1241,16 +1246,19 @@
 
     const isReturn = act === 'RETURN_CLIENT';
     const isReceive = act === 'RECEIVE_DR';
+    const isUsage = act === 'USAGE';
+    const isSourceDocBased = isReturn || isUsage;
 
-    if (isReturn) {
+    if (isSourceDocBased) {
         document.getElementById('source-doc-grp').classList.remove('d-none');
         document.getElementById('t-source-doc').disabled = false;
+        document.getElementById('t-source-doc').value = '';
     } else {
         document.getElementById('source-doc-grp').classList.add('d-none');
     }
 
-    // Completely hide mapping fields if we are doing a Return (so only 2 fields show) or Receive process
-    const hideLocFields = (isReceive || isReturn);
+    // Hide mapping fields for Receive (uses DR), Return, and Usage (use source-doc).
+    const hideLocFields = (isReceive || isSourceDocBased);
 
     document.getElementById('client-grp').style.display = hideLocFields ? 'none' : 'block';
     document.getElementById('loc-grp').style.display = hideLocFields ? 'none' : 'block';
@@ -1261,7 +1269,7 @@
     // Hide the whole Doc Number group only when the action has no doc concept at all.
     // RECEIVE_DR auto-references the DR. RETURN_CLIENT still shows the label + auto-generate
     // hint (matches Barracks), so do NOT include it here. USAGE will be added in Task 4.
-    document.getElementById('doc-grp').classList.toggle('d-none', isReceive);
+    document.getElementById('doc-grp').classList.toggle('d-none', isReceive || isUsage);
 
     if (userRole === 'admin') {
         document.getElementById('t-doc').classList.remove('d-none');
@@ -1312,10 +1320,10 @@
 
   function handleLocationChange() {
     const act = document.getElementById('action').value;
-    if (act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT') {
+    if (act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT' && act !== 'USAGE') {
         updateSiteDropdown();
     }
-    if (act === 'RETURN_CLIENT') {
+    if (act === 'RETURN_CLIENT' || act === 'USAGE') {
         populateSourceDocs();
     }
     updateInventoryBadges();
@@ -1354,26 +1362,27 @@
           const act = document.getElementById('action').value;
           const curLoc = document.getElementById('t-location').value;
           
-          if (act === 'ISSUE' || act === 'USAGE' || act === 'RETURN_WH') {
+          if (act === 'ISSUE' || act === 'RETURN_WH') {
              document.getElementById('entry-rows').innerHTML = '';
              let hasItems = false;
-             
+
              master.inventory.forEach(invItem => {
                  let stock = 0;
                  if (act === 'ISSUE') { stock = invItem.balances[curLoc || details.location] || 0; }
                  else { stock = invItem.balances[tSite] || 0; }
-                 
+
                  if (stock > 0) {
                      hasItems = true;
                      addRow(invItem.code, invItem.name, invItem.uom, "");
                  }
              });
-             
+
              if (!hasItems) {
-                addRow(); 
+                addRow();
                 Swal.fire('Notice', 'No items currently in stock for this location/site.', 'info');
              }
-          } 
+          }
+          // NOTE: USAGE handled by handleSourceDocChange (items pulled from source receipt doc).
       } else {
           document.getElementById('t-client').innerHTML = '<option value="">Auto-populates...</option>';
           document.getElementById('t-client').value = "";
@@ -1391,8 +1400,10 @@
       const act = document.getElementById('action').value;
       document.getElementById('entry-rows').innerHTML = '';
       
+      const isSourceDocBased = (act === 'RETURN_CLIENT' || act === 'USAGE');
+
       if (!doc || !master.receiptDocs[doc]) {
-          if (act === 'RETURN_CLIENT') {
+          if (isSourceDocBased) {
              document.getElementById('loc-grp').style.display = 'none';
              document.getElementById('site-name-grp').style.display = 'none';
              document.getElementById('client-grp').style.display = 'none';
@@ -1403,8 +1414,8 @@
       }
 
       const docData = master.receiptDocs[doc];
-      
-      if (act === 'RETURN_CLIENT') {
+
+      if (isSourceDocBased) {
           // Re-reveal locked fields
           document.getElementById('loc-grp').style.display = 'block';
           document.getElementById('site-name-grp').style.display = 'block';
@@ -1413,10 +1424,10 @@
           document.getElementById('wbs-grp').style.display = 'block';
 
           document.getElementById('t-location').value = docData.location || '';
-          updateSiteDropdown(); 
-          document.getElementById('t-site-name').value = docData.site || ''; 
-          handleSiteChange(); 
-          
+          updateSiteDropdown();
+          document.getElementById('t-site-name').value = docData.site || '';
+          handleSiteChange();
+
           document.getElementById('t-location').disabled = true;
           document.getElementById('t-site-name').disabled = true;
           document.getElementById('t-site-id').disabled = true;
@@ -1424,17 +1435,36 @@
       }
 
       const items = docData.items;
+      const tSiteForUsage = document.getElementById('t-site-name').value;
       const curLoc = document.getElementById('t-location').value;
-      
+
       for (let code in items) {
           const invItem = master.inventory.find(i => i.code === code);
-          const warehouseStock = invItem ? (invItem.balances[curLoc] || 0) : 0;
           const remainingInDoc = items[code].remaining;
-          const availableToReturn = Math.min(remainingInDoc, warehouseStock);
-          
-          if (availableToReturn > 0) {
-              addRow(code, items[code].name, items[code].uom, availableToReturn, availableToReturn, true);
+          let prefill = 0;
+          let manual = false;
+
+          if (act === 'RETURN_CLIENT') {
+              // Return cap = doc remaining ∩ warehouse stock at the source loc
+              const warehouseStock = invItem ? (invItem.balances[curLoc] || 0) : 0;
+              prefill = Math.min(remainingInDoc, warehouseStock);
+              manual = true;
+              if (prefill <= 0) continue;
+          } else if (act === 'USAGE') {
+              // Usage cap = doc remaining ∩ site stock at the destination site
+              const siteStock = invItem ? (invItem.balances[tSiteForUsage] || 0) : 0;
+              const available = Math.min(remainingInDoc, siteStock);
+              if (available <= 0) continue;
+              // Leave quantity blank for the user to fill; pass the doc-derived row in manual mode
+              prefill = "";
+              manual = true;
+              addRow(code, items[code].name, items[code].uom, prefill, 0, manual);
+              continue;
+          } else {
+              continue;
           }
+
+          addRow(code, items[code].name, items[code].uom, prefill, prefill, manual);
       }
       updateInventoryBadges();
   }
