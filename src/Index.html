@@ -1257,7 +1257,12 @@
     document.getElementById('site-id-grp').style.display = hideLocFields ? 'none' : 'block';
     document.getElementById('site-name-grp').style.display = hideLocFields ? 'none' : 'block';
     document.getElementById('wbs-grp').style.display = hideLocFields ? 'none' : 'block';
-    
+
+    // Hide the whole Doc Number group only when the action has no doc concept at all.
+    // RECEIVE_DR auto-references the DR. RETURN_CLIENT still shows the label + auto-generate
+    // hint (matches Barracks), so do NOT include it here. USAGE will be added in Task 4.
+    document.getElementById('doc-grp').classList.toggle('d-none', isReceive);
+
     if (userRole === 'admin') {
         document.getElementById('t-doc').classList.remove('d-none');
         document.getElementById('t-doc-auto-text').classList.add('d-none');
