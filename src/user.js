@@ -28,23 +28,28 @@ function loginUser(identifier, password) {
 
     if (isNewUser) {
       if (password.toString() === storedPass.toString()) {
-        return { success: true, fullName, role, locAccess, siteAccess, isNew: true };
+        return { success: true, email, fullName, role, locAccess, siteAccess, isNew: true };
       }
     } else {
       if (hashPassword(password, salt) === storedPass) {
-        return { success: true, fullName, role, locAccess, siteAccess, isNew: false };
+        return { success: true, email, fullName, role, locAccess, siteAccess, isNew: false };
       }
     }
     return { error: "Incorrect password." };
   } catch (e) { return { error: e.toString() }; }
 }
 
-function finalizePassword(name, newPassword) {
+function finalizePassword(identifier, newPassword) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Users');
   const data = sheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(r => r[1].toString().trim() === name.toString().trim());
-  
+  const key = identifier.toString().trim().toLowerCase();
+  // Match by email first (unique), then fall back to name for safety.
+  let rowIndex = data.findIndex(r => r[0] && r[0].toString().trim().toLowerCase() === key);
+  if (rowIndex === -1) {
+    rowIndex = data.findIndex(r => r[1] && r[1].toString().trim().toLowerCase() === key);
+  }
+
   if (rowIndex === -1) return "User verification failed.";
 
   const salt = Utilities.getUuid(); 

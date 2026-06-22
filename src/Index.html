@@ -406,6 +406,7 @@
 <script>
   let master = { inventory: [], logs: [], dropdowns: { clients: [], locations: [], siteIds: [], sites: [], siteMap: {}, siteDetails: {}, pos: [], pendingPOs: [] }, pending: [], pendingDRs: [], receiptDocs: {} };
   let currentUser = "";
+  let currentEmail = "";
   let userRole = "";
   let locAccess = "";
   let siteAccess = "";
@@ -419,12 +420,13 @@
         document.getElementById('nav-logo-img').src = base64;
       }
     }).getLogoSafe();
-    if (localStorage.getItem('inventoryUser')) { 
-      currentUser = localStorage.getItem('inventoryUser'); 
+    if (localStorage.getItem('inventoryUser')) {
+      currentUser = localStorage.getItem('inventoryUser');
+      currentEmail = localStorage.getItem('inventoryEmail') || '';
       userRole = localStorage.getItem('inventoryRole') || 'team leader';
       locAccess = localStorage.getItem('inventoryLoc') || '';
       siteAccess = localStorage.getItem('inventorySites') || '';
-      startApp(); 
+      startApp();
     } else {
       toggle(false); 
       document.getElementById('login-section').style.display = 'flex';
@@ -442,13 +444,15 @@
     toggle(true);
     google.script.run
       .withSuccessHandler(res => {
-        if(res.success) { 
-          currentUser = res.fullName; 
+        if(res.success) {
+          currentUser = res.fullName;
+          currentEmail = res.email || '';
           userRole = res.role;
           locAccess = res.locAccess;
           siteAccess = res.siteAccess;
-          
-          localStorage.setItem('inventoryUser', currentUser); 
+
+          localStorage.setItem('inventoryUser', currentUser);
+          localStorage.setItem('inventoryEmail', currentEmail);
           localStorage.setItem('inventoryRole', userRole);
           localStorage.setItem('inventoryLoc', locAccess);
           localStorage.setItem('inventorySites', siteAccess);
@@ -471,12 +475,13 @@
       .loginUser(user, pass);
   }
 
-  function doLogout() { 
-    localStorage.removeItem('inventoryUser'); 
+  function doLogout() {
+    localStorage.removeItem('inventoryUser');
+    localStorage.removeItem('inventoryEmail');
     localStorage.removeItem('inventoryRole');
     localStorage.removeItem('inventoryLoc');
     localStorage.removeItem('inventorySites');
-    window.top.location.href = SCRIPT_URL; 
+    window.top.location.href = SCRIPT_URL;
   }
   
   function startApp() { 
@@ -1811,12 +1816,17 @@
     const p1 = document.getElementById('p1').value; const p2 = document.getElementById('p2').value;
     if(p1 !== p2) return Swal.fire('Mismatch', 'Passwords do not match.', 'error');
     toggle(true);
-    google.script.run.withSuccessHandler(res => { 
-        toggle(false); 
-        if(res === "SUCCESS") { 
-            window.top.location.href = SCRIPT_URL; 
-        } else { Swal.fire('Error', res, 'error'); } 
-    }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Update failed.', 'error'); }).finalizePassword(currentUser, p1);
+    google.script.run.withSuccessHandler(res => {
+        toggle(false);
+        if(res === "SUCCESS") {
+            const modalEl = document.getElementById('pwdModal');
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+            document.getElementById('p1').value = '';
+            document.getElementById('p2').value = '';
+            startApp();
+        } else { Swal.fire('Error', res, 'error'); }
+    }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Update failed.', 'error'); }).finalizePassword(currentEmail || currentUser, p1);
   }
 
   function doRecover() {
