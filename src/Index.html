@@ -1313,7 +1313,7 @@
     document.getElementById('entry-rows').innerHTML = '';
     const moveSearch = document.getElementById('move-table-search'); if (moveSearch) moveSearch.value = '';
     if (act === 'DR_CREATE' || act === 'PURCHASE_LOG') { for (let i = 0; i < 10; i++) addRow(); }
-    else if (act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT') addRow();
+    else if (act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT' && act !== 'USAGE') addRow();
 
     handleLocationChange();
   }
@@ -1733,6 +1733,7 @@
 
     if (action === 'RETURN_CLIENT' && !mrcNum) return Swal.fire('Missing Field', 'MRC Document Number is mandatory for returns.', 'error');
     if (action === 'RETURN_CLIENT' && !sourceDoc) return Swal.fire('Missing Field', 'Please select a Source Document.', 'error');
+    if (action === 'USAGE' && !sourceDoc) return Swal.fire('Missing Field', 'Please select a Source Document.', 'error');
     if (action === 'TRANSFER_WH' && !targetLoc) return Swal.fire('Missing Field', 'Please specify Target Warehouse.', 'error');
     if (action === 'TRANSFER_WH' && !targetSite) return Swal.fire('Missing Field', 'Please specify Target Site.', 'error');
     if (action === 'RECEIVE_DR' && !drId) return Swal.fire('Missing Field', 'Please select a pending DR to receive.', 'error');
