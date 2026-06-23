@@ -243,3 +243,38 @@ function test_ISSUE_notifies_scoped_team_leader() {
   _assert(!recents.some(r => r[2] === 'tl2@test.com' && r[8] === 'ISSUE'),
     "Cebu team leader NOT notified");
 }
+
+function test_RETURN_WH_notifies_location_warehouseman() {
+  initializeSheets();
+  // Seed stock at Makati Site to allow the return
+  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+  const invData = iSheet.getDataRange().getValues();
+  const headers = invData[0];
+  let makatiCol = headers.indexOf('Makati Site');
+  if (makatiCol === -1) {
+    iSheet.getRange(1, headers.length + 1).setValue('Makati Site');
+    makatiCol = headers.length;
+  }
+  // Set Makati Site stock for ITM-001 = 10
+  const itmRow = invData.findIndex(r => r[0] === 'ITM-001');
+  if (itmRow > 0) iSheet.getRange(itmRow + 1, makatiCol + 1).setValue(10);
+
+  const nSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notifications');
+  const startNotifs = nSheet.getLastRow();
+
+  processBulkTransaction({
+    email: 'tl1@test.com',
+    user: 'Bob TeamLeader',
+    role: 'team leader',
+    action: 'RETURN_WH',
+    location: 'NCR Hub',
+    siteName: 'Makati Site',
+    siteId: 'S-001',
+    client: 'Acme Corp',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: 'WBS-991' }]
+  });
+
+  const recents = nSheet.getRange(startNotifs + 1, 1, nSheet.getLastRow() - startNotifs, 14).getValues();
+  _assert(recents.some(r => r[2] === 'wh@test.com' && r[8] === 'RETURN_WH'),
+    "NCR Hub warehouseman notified for RETURN_WH");
+}

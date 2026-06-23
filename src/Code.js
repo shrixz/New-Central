@@ -535,6 +535,13 @@ function processBulkTransaction(payload) {
         const msg = `${validated.fullName} issued ${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'} (${itemList}) to ${payload.siteName} — pending your acknowledgment`;
         notify(recipients, 'ISSUE', sender, msg, reqId);
       }
+      if (payload.action === 'RETURN_WH' && requestEntries.length > 0) {
+        const recipients = resolveRecipients('RETURN_WH', payload);
+        const reqId = requestEntries[0][0];
+        const itemList = requestEntries.map(r => r[7]).join(', ').substring(0, 120);
+        const msg = `${validated.fullName} returned ${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'} (${itemList}) from ${payload.siteName} to ${payload.location} — pending your receipt`;
+        notify(recipients, 'RETURN_WH', sender, msg, reqId);
+      }
     } catch (notifErr) {
       console.error("notify(DR_CREATE) failed: " + notifErr.toString());
     }
