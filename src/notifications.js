@@ -30,7 +30,8 @@ function notify(recipients, action, sender, message, relatedReqId) {
 
   const nSheet = _notif_ensureSheet();
   const d = new Date();
-  const webAppUrl = ScriptApp.getService().getUrl() || '';
+  let webAppUrl = '';
+  try { webAppUrl = ScriptApp.getService().getUrl() || ''; } catch (_) {}
   const rows = [];
   let emailsSent = 0;
   let emailsFailed = 0;
