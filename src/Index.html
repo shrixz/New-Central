@@ -746,7 +746,7 @@
         if(act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT' && !document.getElementById('entry-rows').innerHTML.trim()) addRow(); 
       })
       .withFailureHandler(err => { if (!silent) toggle(false); })
-      .getAppData({ fullName: currentUser, role: userRole, locAccess: locAccess, siteAccess: siteAccess });
+      .getAppData({ email: currentEmail, fullName: currentUser, role: userRole, locAccess: locAccess, siteAccess: siteAccess });
   }
 
   function getAvailableMasterlist(excludeRid = null) {
@@ -989,7 +989,7 @@
         toggle(true);
         google.script.run.withSuccessHandler(r => {
           toggle(false); if(r.success) { Swal.fire('Success', 'Action processed.', 'success'); refresh(); } else { Swal.fire('Error', r.error, 'error'); }
-        }).processQueueAction(reqId, action, { fullName: currentUser, role: userRole });
+        }).processQueueAction(reqId, action, { email: currentEmail, fullName: currentUser, role: userRole });
       }
     });
   }
@@ -1832,7 +1832,7 @@
             } 
             else { Swal.fire('Error', res.error, 'error'); }
           }).withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Transaction failed.', 'error'); })
-          .processBulkTransaction({ user: currentUser, role: userRole, location, siteId, siteName, action, client, refDoc, poNumber, poToFollow, mrcNum, targetLoc, targetSite, drId, sourceDoc, items, returnType: 'BY_DOC' });
+          .processBulkTransaction({ email: currentEmail, user: currentUser, role: userRole, location, siteId, siteName, action, client, refDoc, poNumber, poToFollow, mrcNum, targetLoc, targetSite, drId, sourceDoc, items, returnType: 'BY_DOC' });
       }
     });
   }
