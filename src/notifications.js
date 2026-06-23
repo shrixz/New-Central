@@ -77,3 +77,70 @@ function notify(recipients, action, sender, message, relatedReqId) {
 
   return { inserted: rows.length, emailsSent: emailsSent, emailsFailed: emailsFailed };
 }
+
+function _notif_listUsers() {
+  const uSheet = SS.getSheetByName(SHEETS.USERS);
+  if (!uSheet || uSheet.getLastRow() < 2) return [];
+  const data = uSheet.getRange(2, 1, uSheet.getLastRow() - 1, 7).getValues();
+  return data
+    .filter(r => r[0] && r[0].toString().trim() !== '')
+    .map(r => ({
+      email: r[0].toString().trim(),
+      name: r[1] ? r[1].toString().trim() : '',
+      role: r[4] ? r[4].toString().toLowerCase().trim() : '',
+      locAccess: r[5] ? r[5].toString().trim() : '',
+      siteAccess: r[6] ? r[6].toString().trim() : ''
+    }));
+}
+
+function _notif_hasAccess(accessCsv, value) {
+  if (!accessCsv || accessCsv.toString().trim() === '') return true; // empty means all
+  const list = accessCsv.toString().split(',').map(s => s.trim()).filter(s => s);
+  return list.indexOf((value || '').toString().trim()) !== -1;
+}
+
+function resolveRecipients(action, payload) {
+  const users = _notif_listUsers();
+  const role = (r) => r.role;
+
+  if (action === 'DR_CREATE') {
+    return users.filter(u => role(u) === 'warehouseman' && _notif_hasAccess(u.locAccess, payload.location));
+  }
+  if (action === 'TRANSFER_WH') {
+    return users.filter(u => role(u) === 'warehouseman' && _notif_hasAccess(u.locAccess, payload.targetLoc));
+  }
+  if (action === 'ISSUE') {
+    return users.filter(u => role(u) === 'team leader' && _notif_hasAccess(u.siteAccess, payload.siteName));
+  }
+  if (action === 'RETURN_WH') {
+    return users.filter(u => role(u) === 'warehouseman' && _notif_hasAccess(u.locAccess, payload.location));
+  }
+  if (action === 'RETURN_CLIENT') {
+    return users.filter(u => role(u) === 'admin');
+  }
+  return [];
+}
+
+function resolveRequester(reqId) {
+  if (!reqId) return null;
+  const rSheet = SS.getSheetByName(SHEETS.REQ);
+  if (!rSheet || rSheet.getLastRow() < 2) return null;
+  const lastCol = Math.max(14, rSheet.getLastColumn());
+  const data = rSheet.getRange(2, 1, rSheet.getLastRow() - 1, lastCol).getValues();
+  const target = reqId.toString().trim();
+  const row = data.find(r => r[0] && r[0].toString().trim() === target);
+  if (!row) return null;
+
+  const claimedEmail = row[13] ? row[13].toString().trim() : '';
+  const claimedName = row[2] ? row[2].toString().trim() : '';
+  const users = _notif_listUsers();
+  let match = null;
+  if (claimedEmail) {
+    match = users.find(u => u.email.toLowerCase() === claimedEmail.toLowerCase());
+  }
+  if (!match && claimedName) {
+    match = users.find(u => u.name.toLowerCase() === claimedName.toLowerCase());
+  }
+  if (!match) return null;
+  return { email: match.email, name: match.name, role: match.role };
+}

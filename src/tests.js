@@ -104,3 +104,33 @@ function test_notify_handles_empty_email_gracefully() {
   _assert(result.inserted === 1, "Still writes a row");
   _assert(result.emailsSent === 0, "Skips empty-email send");
 }
+
+function test_resolveRecipients_DR_CREATE_filters_by_location() {
+  initializeSheets();
+  // Default users: wh@test.com has 'NCR Hub' access; admin has '' (all)
+  const r = resolveRecipients('DR_CREATE', { location: 'NCR Hub' });
+  const emails = r.map(x => x.email);
+  _assert(emails.indexOf('wh@test.com') !== -1, "NCR Hub warehouseman included");
+  _assert(emails.indexOf('admin@test.com') === -1, "Admin NOT included for DR_CREATE");
+}
+
+function test_resolveRecipients_ISSUE_filters_by_site() {
+  initializeSheets();
+  const r = resolveRecipients('ISSUE', { siteName: 'Makati Site' });
+  const emails = r.map(x => x.email);
+  _assert(emails.indexOf('tl1@test.com') !== -1, "Makati team leader included");
+  _assert(emails.indexOf('tl2@test.com') === -1, "Cebu team leader NOT included");
+}
+
+function test_resolveRecipients_RETURN_CLIENT_all_admins() {
+  initializeSheets();
+  const r = resolveRecipients('RETURN_CLIENT', {});
+  _assert(r.some(x => x.email === 'admin@test.com'), "Admin included");
+  _assert(r.every(x => x.role === 'admin'), "Only admins returned");
+}
+
+function test_resolveRequester_returns_null_for_unknown_id() {
+  initializeSheets();
+  const r = resolveRequester('NOT-A-REAL-ID-12345');
+  _assert(r === null, "Returns null for unknown reqId");
+}
