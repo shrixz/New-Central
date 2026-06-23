@@ -25,16 +25,8 @@ function doGet(e) {
 function getAppData(userProfile) {
   try {
     if (!SS) throw new Error("Could not access spreadsheet.");
-    let validated = null;
-    try {
-      validated = validateUserProfile(userProfile);
-      userProfile = validated;
-    } catch (validErr) {
-      // Fall through with unvalidated profile so the app still loads for
-      // legacy/transitional sessions. Pending queue and notifications
-      // will be empty for unrecognized users.
-      console.warn("getAppData unvalidated profile: " + validErr.toString());
-    }
+    const validated = validateUserProfile(userProfile);
+    userProfile = validated;
     const iSheet = SS.getSheetByName(SHEETS.INV);
     const lSheet = SS.getSheetByName(SHEETS.LOGS);
     const uSheet = SS.getSheetByName(SHEETS.USERS);
@@ -495,10 +487,8 @@ function processBulkTransaction(payload) {
         const pdfUrl = file.getUrl();
         logEntries.forEach(le => { if(le[2] === 'RETURN_CLIENT') le[16] = pdfUrl; });
 
-        const uSheet = SS.getSheetByName(SHEETS.USERS);
-        const userRow = uSheet.getDataRange().getValues().find(r => r[1].toString().trim() === payload.user.toString().trim());
-        if (userRow && userRow[0]) {
-          GmailApp.sendEmail(userRow[0], `Return to Client Details - ${finalDocId}`, `Hello ${payload.user},\n\nPlease find attached the document details for your recent item returns from ${payload.location}.\n\nDocument ID: ${finalDocId}\n\nThank you,\nInventory System`, { attachments: [file] });
+        if (validated.email) {
+          GmailApp.sendEmail(validated.email, `Return to Client Details - ${finalDocId}`, `Hello ${validated.fullName},\n\nPlease find attached the document details for your recent item returns from ${payload.location}.\n\nDocument ID: ${finalDocId}\n\nThank you,\nInventory System`, { attachments: [file] });
         }
       } catch (pdfErr) { console.error("PDF generation failed: " + pdfErr); }
     }
@@ -563,7 +553,7 @@ function processBulkTransaction(payload) {
         }
       }
     } catch (notifErr) {
-      console.error("notify(DR_CREATE) failed: " + notifErr.toString());
+      console.error("notify(" + payload.action + ") failed: " + notifErr.toString());
     }
 
     if (poAssignEntries.length > 0) {

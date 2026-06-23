@@ -474,6 +474,13 @@
     if (localStorage.getItem('inventoryUser')) {
       currentUser = localStorage.getItem('inventoryUser');
       currentEmail = localStorage.getItem('inventoryEmail') || '';
+      if (!currentEmail) {
+        // Legacy pre-notifications session — clear stale storage and stay on the login page
+        localStorage.clear();
+        toggle(false);
+        document.getElementById('login-section').style.display = 'flex';
+        return;
+      }
       userRole = localStorage.getItem('inventoryRole') || 'team leader';
       locAccess = localStorage.getItem('inventoryLoc') || '';
       siteAccess = localStorage.getItem('inventorySites') || '';
@@ -799,7 +806,13 @@
         const act = document.getElementById('action').value;
         if(act !== 'RECEIVE_DR' && act !== 'RETURN_CLIENT' && !document.getElementById('entry-rows').innerHTML.trim()) addRow(); 
       })
-      .withFailureHandler(err => { if (!silent) toggle(false); })
+      .withFailureHandler(err => {
+        if (!silent) toggle(false);
+        const msg = err && err.message ? err.message : String(err || '');
+        if (msg.indexOf('Authentication required') !== -1 || msg.indexOf('not recognized') !== -1) {
+          Swal.fire('Session expired', 'Please log in again.', 'warning').then(() => doLogout());
+        }
+      })
       .getAppData({ email: currentEmail, fullName: currentUser, role: userRole, locAccess: locAccess, siteAccess: siteAccess });
   }
 
@@ -1128,7 +1141,7 @@
               grouped[key].forEach(p => {
                  let btnText = p.action === 'TRANSFER_WH' ? 'Confirm Receipt' : 'Confirm Return';
                  html += `
-                     <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom bg-transparent">
+                     <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom bg-transparent" data-req-id="${p.id}">
                         <div>
                            <div class="fw-bold text-primary mb-1">${p.itemCode} - ${p.itemName}</div>
                            <div class="small text-muted">ID: ${p.id} &bull; Qty: <strong class="text-dark">${p.qty} ${p.unit}</strong> &bull; By: ${p.requestor}</div>
@@ -1150,7 +1163,7 @@
        master.pending.forEach(p => {
          if (p.action === 'ISSUE') {
              html += `
-                <div class="card mb-3 border-0 shadow-sm" style="border-left: 4px solid var(--accent); border-radius: 16px;">
+                <div class="card mb-3 border-0 shadow-sm" style="border-left: 4px solid var(--accent); border-radius: 16px;" data-req-id="${p.id}">
                   <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div>
                        <div class="d-flex align-items-center gap-2 mb-2">

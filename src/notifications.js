@@ -187,7 +187,7 @@ function markNotificationRead(notifId, userProfile) {
   const idx = data.findIndex(r => r[0] && r[0].toString().trim() === target);
   if (idx === -1) throw new Error("Notification not found.");
   if ((data[idx][2] || '').toString().toLowerCase() !== validated.email.toLowerCase()) {
-    throw new Error("Not your notification.");
+    throw new Error("Not your notification");
   }
   nSheet.getRange(idx + 2, 12, 1, 2).setValues([[true, new Date()]]);
   return { success: true };
