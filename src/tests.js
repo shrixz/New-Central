@@ -510,3 +510,21 @@ function test_ISSUE_round_trip_warehouseman_to_team_leader() {
   _assert(newRow[6] === 'Makati Site', "Target site = Makati Site");
   _assert(newRow[13] === 'wh@test.com', "User Email populated");
 }
+
+function test_DR_id_is_always_string_in_requests_sheet() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName('Requests');
+
+  // Submit a DR_CREATE; the resulting Req ID should be a string starting with DOC- or whatever the user supplied
+  processBulkTransaction({
+    email: 'admin@test.com', user: 'Admin User', role: 'admin', action: 'DR_CREATE',
+    location: 'NCR Hub', siteName: 'Makati Site', siteId: 'S-001', client: 'Acme Corp',
+    refDoc: 'DR-TYPE-001', poNumber: 'PO-10001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: 'WBS-991' }]
+  });
+
+  const lastRow = rSheet.getRange(rSheet.getLastRow(), 1, 1, 14).getValues()[0];
+  _assert(typeof lastRow[0] === 'string', "Req ID stored as string (type was: " + typeof lastRow[0] + ")");
+  _assert(lastRow[0] === 'DR-TYPE-001', "Req ID round-trips exactly");
+}
