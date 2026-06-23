@@ -700,7 +700,9 @@ function assignPOToDoc(docNumber, poNumber, userProfile) {
     if (!docNumber || !poNumber) throw new Error("Doc Number and PO Number are both required.");
 
     const paSheet = SS.getSheetByName(SHEETS.PO_ASSIGN);
-    if (!paSheet || paSheet.getLastRow() < 2) throw new Error("PO Assignments sheet has no rows.");
+    if (!paSheet || paSheet.getLastRow() < 2) {
+      return { success: false, error: "No pending PO assignments to update." };
+    }
 
     const data = paSheet.getRange(2, 1, paSheet.getLastRow() - 1, 11).getValues();
     let updated = 0;

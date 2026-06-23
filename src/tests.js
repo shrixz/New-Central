@@ -429,3 +429,17 @@ function test_markNotificationRead_rejects_foreign_notif() {
   catch (e) { threw = e.message.indexOf("Not your notification") !== -1; }
   _assert(threw, "Throws when caller's email != recipient");
 }
+
+function test_assignPOToDoc_empty_sheet_returns_clean_error() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const paSheet = ss.getSheetByName('PO Assignments');
+  // Clear all data rows but keep the header
+  if (paSheet.getLastRow() > 1) {
+    paSheet.getRange(2, 1, paSheet.getLastRow() - 1, paSheet.getLastColumn()).clearContent();
+  }
+  const result = assignPOToDoc('DOC-NONEXISTENT', 'PO-10001', { email: 'admin@test.com' });
+  _assert(result.success === false, "Returns success: false");
+  _assert(result.error && result.error.indexOf("no rows") === -1 && (result.error.indexOf("No pending") !== -1 || result.error.indexOf("no pending") !== -1),
+    "Returns a friendly 'no pending' message rather than the stack-trace error");
+}
