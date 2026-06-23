@@ -185,3 +185,37 @@ function test_DR_CREATE_fires_notification() {
   _assert(newRow[4] === 'warehouseman', "Recipient role = warehouseman");
   _assert(newRow[2] === 'wh@test.com', "Recipient is NCR Hub warehouseman");
 }
+
+function test_TRANSFER_WH_notifies_target_warehousemen() {
+  initializeSheets();
+  // Seed a second warehouseman with Visayas Hub access for this test:
+  const uSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  // Only add if not present
+  const existing = uSheet.getRange(2, 1, uSheet.getLastRow() - 1, 1).getValues().flat();
+  if (existing.indexOf('wh2@test.com') === -1) {
+    uSheet.appendRow(['wh2@test.com', 'Dora Warehouseman', 'temp123', '', 'warehouseman', 'Visayas Hub', '']);
+  }
+
+  const nSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notifications');
+  const startNotifs = nSheet.getLastRow();
+
+  processBulkTransaction({
+    email: 'wh@test.com',
+    user: 'Alice Warehouseman',
+    role: 'warehouseman',
+    action: 'TRANSFER_WH',
+    location: 'NCR Hub',
+    siteName: '-',
+    targetLoc: 'Visayas Hub',
+    targetSite: '-',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: '' }]
+  });
+
+  const endNotifs = nSheet.getLastRow();
+  _assert(endNotifs > startNotifs, "Notifications sheet grew");
+  const recents = nSheet.getRange(startNotifs + 1, 1, endNotifs - startNotifs, 14).getValues();
+  _assert(recents.some(r => r[2] === 'wh2@test.com' && r[8] === 'TRANSFER_WH'),
+    "Visayas Hub warehouseman (wh2) was notified for TRANSFER_WH");
+  _assert(!recents.some(r => r[2] === 'wh@test.com' && r[8] === 'TRANSFER_WH'),
+    "Source warehouseman was NOT self-notified");
+}

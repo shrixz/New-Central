@@ -519,6 +519,15 @@ function processBulkTransaction(payload) {
         const msg = `${validated.fullName} created DR ${finalDocId} (${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'}: ${itemList}) — pending your receipt`;
         notify(recipients, 'DR_CREATE', sender, msg, finalDocId);
       }
+
+      if (payload.action === 'TRANSFER_WH' && requestEntries.length > 0) {
+        const recipients = resolveRecipients('TRANSFER_WH', payload);
+        const reqId = requestEntries[0][0];
+        const itemList = requestEntries.map(r => r[7]).join(', ').substring(0, 120);
+        const targetLabel = (payload.targetSite && payload.targetSite !== '-') ? payload.targetSite : payload.targetLoc;
+        const msg = `${validated.fullName} initiated transfer to ${targetLabel} (${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'}: ${itemList}) — pending your receipt`;
+        notify(recipients, 'TRANSFER_WH', sender, msg, reqId);
+      }
     } catch (notifErr) {
       console.error("notify(DR_CREATE) failed: " + notifErr.toString());
     }
