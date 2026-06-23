@@ -219,3 +219,27 @@ function test_TRANSFER_WH_notifies_target_warehousemen() {
   _assert(!recents.some(r => r[2] === 'wh@test.com' && r[8] === 'TRANSFER_WH'),
     "Source warehouseman was NOT self-notified");
 }
+
+function test_ISSUE_notifies_scoped_team_leader() {
+  initializeSheets();
+  const nSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notifications');
+  const startNotifs = nSheet.getLastRow();
+
+  processBulkTransaction({
+    email: 'wh@test.com',
+    user: 'Alice Warehouseman',
+    role: 'warehouseman',
+    action: 'ISSUE',
+    location: 'NCR Hub',
+    siteName: 'Makati Site',
+    siteId: 'S-001',
+    client: 'Acme Corp',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: 'WBS-991' }]
+  });
+
+  const recents = nSheet.getRange(startNotifs + 1, 1, nSheet.getLastRow() - startNotifs, 14).getValues();
+  _assert(recents.some(r => r[2] === 'tl1@test.com' && r[8] === 'ISSUE'),
+    "Makati team leader notified for ISSUE");
+  _assert(!recents.some(r => r[2] === 'tl2@test.com' && r[8] === 'ISSUE'),
+    "Cebu team leader NOT notified");
+}
