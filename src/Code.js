@@ -7,7 +7,8 @@ const SHEETS = {
   DISCREP: 'Discrepancies',
   DROPS: 'Dropdowns',
   PO_DB: 'PO Database',
-  PO_ASSIGN: 'PO Assignments'
+  PO_ASSIGN: 'PO Assignments',
+  NOTIF: 'Notifications'
 };
 
 function doGet(e) {

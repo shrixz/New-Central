@@ -10,9 +10,9 @@ function initializeSheets() {
         ['CBL-100', 'Cat6 Ethernet Cable (300m Box)', 'box', 50, 0, 0, 10, 0]
       ]
     },
-    { 
-      name: 'Requests', 
-      head: ['Req ID', 'Date', 'User Name', 'Role', 'Action', 'Target Location', 'Target Site', 'Item Code', 'Item Description', 'UOM', 'Qty', 'Status', 'Remarks'] 
+    {
+      name: 'Requests',
+      head: ['Req ID', 'Date', 'User Name', 'Role', 'Action', 'Target Location', 'Target Site', 'Item Code', 'Item Description', 'UOM', 'Qty', 'Status', 'Remarks', 'User Email']
     },
     {
       name: 'Logs',
@@ -55,6 +55,10 @@ function initializeSheets() {
     {
       name: 'PO Assignments',
       head: ['Timestamp', 'Doc Number', 'User', 'Location', 'Site Name', 'Item Code', 'Item Description', 'UOM', 'Qty', 'PO Number', 'Status']
+    },
+    {
+      name: 'Notifications',
+      head: ['Notif ID', 'Timestamp', 'Recipient Email', 'Recipient Name', 'Recipient Role', 'Sender Email', 'Sender Name', 'Sender Role', 'Action', 'Related Req ID', 'Message', 'Read', 'Read At', 'Email Status']
     }
   ];
 
