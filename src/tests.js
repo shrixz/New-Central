@@ -247,7 +247,7 @@ function test_ISSUE_notifies_scoped_team_leader() {
 function test_RETURN_WH_notifies_location_warehouseman() {
   initializeSheets();
   // Seed stock at Makati Site to allow the return
-  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SKU Masterlist');
   const invData = iSheet.getDataRange().getValues();
   const headers = invData[0];
   let makatiCol = headers.indexOf('Makati Site');
@@ -283,7 +283,7 @@ function test_RETURN_CLIENT_notifies_admins() {
   initializeSheets();
   // Need a prior RECEIVE_DR to provide stock to return; for the test we just
   // seed Inventory directly with stock at NCR Hub for ITM-001.
-  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SKU Masterlist');
   const invData = iSheet.getDataRange().getValues();
   const headers = invData[0];
   const ncrCol = headers.indexOf('NCR Hub');
@@ -348,7 +348,7 @@ function test_queue_confirm_notifies_original_requester() {
   const nSheet = ss.getSheetByName('Notifications');
 
   // Seed stock so ISSUE will succeed
-  const iSheet = ss.getSheetByName('Inventory');
+  const iSheet = ss.getSheetByName('SKU Masterlist');
   const invData = iSheet.getDataRange().getValues();
   const ncrCol = invData[0].indexOf('NCR Hub');
   const itmRow = invData.findIndex(r => r[0] === 'ITM-001');
@@ -489,7 +489,7 @@ function test_ISSUE_round_trip_warehouseman_to_team_leader() {
   const rSheet = ss.getSheetByName('Requests');
 
   // Seed stock
-  const iSheet = ss.getSheetByName('Inventory');
+  const iSheet = ss.getSheetByName('SKU Masterlist');
   const invData = iSheet.getDataRange().getValues();
   const ncrCol = invData[0].indexOf('NCR Hub');
   const itmRow = invData.findIndex(r => r[0] === 'ITM-001');

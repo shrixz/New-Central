@@ -2,7 +2,7 @@ function initializeSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = [
     { 
-      name: 'Inventory', 
+      name: 'SKU Masterlist',
       head: ['Item Code', 'Item Description', 'UOM', 'NCR Hub', 'Makati Site', 'Taguig Site', 'Visayas Hub', 'Cebu Site'],
       data: [
         ['ITM-001', 'Dell Latitude 5420 Laptop', 'pc', 70, 30, 0, 80, 20],
@@ -16,7 +16,7 @@ function initializeSheets() {
     },
     {
       name: 'Logs',
-      head: ['Timestamp', 'Doc Number', 'Action', 'Client Name', 'User', 'Site ID', 'Site Name', 'Warehouse Location', 'Item Code', 'Item Description', 'UOM', 'WBS', 'Qty', 'Balance Before', 'Balance After', 'Status', 'PDF Link', 'PO Number', 'Unit Price', 'Subtotal']
+      head: ['Timestamp', 'Doc Number', 'Action', 'Client Name', 'User', 'Site ID', 'Site Name', 'Warehouse Location', 'Item Code', 'Item Description', 'UOM', 'WBS', 'Qty', 'Balance Before', 'Balance After', 'Status', 'PDF Link', 'PO Number', 'Unit Price', 'Subtotal', 'Destination Location', 'Destination Site']
     },
     { 
       name: 'Users', 

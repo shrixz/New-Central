@@ -1,6 +1,6 @@
 const SS = SpreadsheetApp.getActiveSpreadsheet();
 const SHEETS = {
-  INV: 'Inventory',
+  INV: 'SKU Masterlist',
   LOGS: 'Logs',
   USERS: 'Users',
   REQ: 'Requests',
@@ -213,7 +213,8 @@ function getAppData(userProfile) {
         return [
           l[0].toISOString ? l[0].toISOString() : l[0],
           l[1]||'', l[2]||'', l[3]||'', l[4]||'', l[5]||'', l[6]||'', l[7]||'', l[8]||'', l[9]||'', l[10]||'',
-          l[11]||'', l[12]||0, l[13]||0, l[14]||0, l[15]||'Completed', l[16]||'', l[17]||''
+          l[11]||'', l[12]||0, l[13]||0, l[14]||0, l[15]||'Completed', l[16]||'', l[17]||'',
+          l[20]||'', l[21]||''
         ];
       });
     }
@@ -376,7 +377,8 @@ function processBulkTransaction(payload) {
           let reqId = "TRN-" + Utilities.formatDate(d, "GMT+8", "yyyyMMdd-HHmmss") + "-" + Math.floor(Math.random() * 1000);
           let targetDisplay = (payload.targetSite && payload.targetSite !== "-") ? payload.targetSite : payload.targetLoc;
           requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.targetLoc, payload.targetSite, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending Receipt', '', validated.email ]);
-          logEntries.push([ d, reqId, payload.action, '-', payload.user, '-', payload.siteName || '-', payload.location, cleanCode, cleanName, itemReq.uom, '', actualQty, sourceBefore, sourceBefore - actualQty, "Pending Transfer", "" ]);
+          // Destination Location/Site mirror Barracks' Logs columns (display-only; the live target is also tracked in Requests)
+          logEntries.push([ d, reqId, payload.action, '-', payload.user, '-', payload.siteName || '-', payload.location, cleanCode, cleanName, itemReq.uom, '', actualQty, sourceBefore, sourceBefore - actualQty, "Pending Transfer", "", "", 0, 0, payload.targetLoc || "", payload.targetSite || "" ]);
           continue;
         }
         else if (payload.action === "ISSUE") {
@@ -493,14 +495,17 @@ function processBulkTransaction(payload) {
       } catch (pdfErr) { console.error("PDF generation failed: " + pdfErr); }
     }
 
-    // Normalize every log row to 20 cols: 18=PO Number (""), 19=Unit Price (0), 20=Subtotal (0)
+    // Normalize every log row to 22 cols: 18=PO Number (""), 19=Unit Price (0), 20=Subtotal (0), 21=Destination Location (""), 22=Destination Site ("")
     if (logEntries.length > 0) {
       const finalLogs = logEntries.map(le => {
-        const row = le.slice(0, 20);
-        while (row.length < 20) row.push(row.length === 17 ? "" : 0);
+        const row = le.slice(0, 22);
+        while (row.length < 22) {
+          const i = row.length;
+          row.push((i === 18 || i === 19) ? 0 : "");
+        }
         return row;
       });
-      lSheet.getRange(lSheet.getLastRow() + 1, 1, finalLogs.length, 20).setValues(finalLogs);
+      lSheet.getRange(lSheet.getLastRow() + 1, 1, finalLogs.length, 22).setValues(finalLogs);
     }
     if (discrepancyEntries.length > 0) dSheet.getRange(dSheet.getLastRow() + 1, 1, discrepancyEntries.length, 9).setValues(discrepancyEntries);
     if (requestEntries.length > 0) rSheet.getRange(rSheet.getLastRow() + 1, 1, requestEntries.length, 14).setValues(requestEntries);

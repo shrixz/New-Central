@@ -405,6 +405,7 @@
                     <th>Date</th>
                     <th>Action</th>
                     <th>Location/Site</th>
+                    <th>Destination</th>
                     <th>Item Details</th>
                     <th>Qty</th>
                     <th>Status</th>
@@ -972,13 +973,14 @@
         <td class="small text-muted">${new Date(l[0]).toLocaleDateString()}</td>
         <td><span class="badge" style="background-color: ${badgeBg}; color: ${badgeCol}; text-transform: uppercase; font-size: 0.65rem;">${l[2].replace("_", " ")}</span></td>
         <td class="small text-muted">${l[7] || '-'} <br/> ${l[6] || '-'}</td>
+        <td class="small text-muted">${(l[18] || l[19]) ? `${l[18] || '-'} <br/> ${l[19] || '-'}` : '-'}</td>
         <td class="small"><strong>${l[8]}</strong><br>${l[9]}</td>
         <td class="fw-bold">${l[12]}</td>
         <td><span class="badge" style="background-color: ${statusBg}; color: ${statusCol}; font-size: 0.65rem;">${l[15]}</span></td>
         <td class="small text-muted">${l[13]}</td>
         <td class="fw-bold small">${l[14]}</td>
         <td>${(l[2] === 'RETURN_CLIENT' && l[16] && l[16].startsWith('http')) ? `<a href="${l[16]}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-pdf"></i> Details</a>` : (l[16] ? l[16] : '-')}</td>
-      </tr>`}).join('') : '<tr><td colspan="9" class="text-center py-5 text-muted">No matching records</td></tr>'; 
+      </tr>`}).join('') : '<tr><td colspan="10" class="text-center py-5 text-muted">No matching records</td></tr>'; 
   }
 
   function toggleNotifPanel() {
