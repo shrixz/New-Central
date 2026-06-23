@@ -84,6 +84,43 @@
     .form-control-sm, .form-select-sm { font-size: 0.9rem !important; min-height: 40px !important; }
     #entry-rows .i-qty, #entry-rows .i-price, #entry-rows .i-subtotal, #entry-rows .i-actual-qty { min-width: 70px; }
   }
+    .notif-badge {
+      position: absolute; top: -2px; right: -4px;
+      background: #ef4444; color: white;
+      font-size: 0.65rem; font-weight: 700;
+      min-width: 18px; height: 18px;
+      border-radius: 9px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0 5px;
+    }
+    .notif-panel {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      width: 340px; max-height: 480px;
+      background: white; border: 1px solid #e2e8f0;
+      border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15);
+      z-index: 10000; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .notif-panel-header {
+      padding: 14px 16px; border-bottom: 1px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+      background: #f8fafc;
+    }
+    .notif-panel-header a { font-size: 0.8rem; color: var(--accent); text-decoration: none; }
+    .notif-panel-header a[aria-disabled="true"] { color: #cbd5e1; pointer-events: none; }
+    .notif-list { flex: 1; overflow-y: auto; }
+    .notif-item {
+      padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .notif-item:hover { background: #f1f5f9; }
+    .notif-item.unread { background: #eff6ff; border-left: 3px solid var(--accent); padding-left: 13px; }
+    .notif-item .sender { font-weight: 700; color: var(--primary); font-size: 0.85rem; }
+    .notif-item .role-tag { font-size: 0.7rem; color: #64748b; background: #e2e8f0; border-radius: 6px; padding: 1px 6px; margin-left: 6px; }
+    .notif-item .msg { color: #475569; font-size: 0.8rem; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .notif-item .time { font-size: 0.7rem; color: #94a3b8; margin-top: 4px; }
+    .notif-empty { padding: 32px 16px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+    .notif-panel-footer { padding: 8px 16px; font-size: 0.7rem; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; background: #f8fafc; }
   </style>
 </head>
 <body>
@@ -123,6 +160,20 @@
         <img src="<?= logoUrl ?>" class="nav-logo" id="nav-logo-img" alt="Logo"> Inventory System
       </a>
       <div class="user-nav-info">
+        <div id="notif-wrap" style="position: relative;">
+          <button id="notif-bell" class="btn btn-sm btn-outline-secondary border-0" onclick="toggleNotifPanel()" type="button" aria-label="Notifications">
+            <i class="bi bi-bell fs-5"></i>
+            <span id="notif-badge" class="notif-badge d-none">0</span>
+          </button>
+          <div id="notif-panel" class="notif-panel d-none">
+            <div class="notif-panel-header">
+              <span class="fw-bold">Notifications</span>
+              <a href="#" onclick="markAllNotifsRead(); return false;" id="notif-mark-all">Mark all read</a>
+            </div>
+            <div id="notif-list" class="notif-list"></div>
+            <div class="notif-panel-footer" id="notif-footer"></div>
+          </div>
+        </div>
         <div class="text-end d-none d-md-block">
           <div id="user-display" class="fw-bold text-dark small"></div>
           <div class="text-muted smaller" style="font-size: 0.75rem;"><i class="bi bi-person-badge text-accent"></i> <span id="role-display" class="text-uppercase"></span></div>
@@ -891,6 +942,25 @@
         <td class="fw-bold small">${l[14]}</td>
         <td>${(l[2] === 'RETURN_CLIENT' && l[16] && l[16].startsWith('http')) ? `<a href="${l[16]}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-pdf"></i> Details</a>` : (l[16] ? l[16] : '-')}</td>
       </tr>`}).join('') : '<tr><td colspan="9" class="text-center py-5 text-muted">No matching records</td></tr>'; 
+  }
+
+  function toggleNotifPanel() {
+    const panel = document.getElementById('notif-panel');
+    panel.classList.toggle('d-none');
+  }
+
+  // Close panel when clicking outside
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('notif-wrap');
+    const panel = document.getElementById('notif-panel');
+    if (!wrap || !panel) return;
+    if (!wrap.contains(e.target) && !panel.classList.contains('d-none')) {
+      panel.classList.add('d-none');
+    }
+  });
+
+  function markAllNotifsRead() {
+    // Implemented in Task 18
   }
 
   function renderQueue() {
