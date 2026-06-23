@@ -134,3 +134,27 @@ function test_resolveRequester_returns_null_for_unknown_id() {
   const r = resolveRequester('NOT-A-REAL-ID-12345');
   _assert(r === null, "Returns null for unknown reqId");
 }
+
+function test_processBulkTransaction_writes_user_email_on_requests() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName('Requests');
+  const startRows = rSheet.getLastRow();
+
+  const result = processBulkTransaction({
+    email: 'admin@test.com',
+    user: 'Admin User',
+    role: 'admin',
+    action: 'DR_CREATE',
+    location: 'NCR Hub',
+    siteName: 'Makati Site',
+    siteId: 'S-001',
+    client: 'Acme Corp',
+    poNumber: 'PO-10001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 5, wbs: 'WBS-991' }]
+  });
+  _assert(result.success === true, "DR_CREATE succeeded");
+
+  const newRow = rSheet.getRange(startRows + 1, 1, 1, 14).getValues()[0];
+  _assert(newRow[13] === 'admin@test.com', "User Email column populated on new Requests row");
+}

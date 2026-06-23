@@ -355,7 +355,7 @@ function processBulkTransaction(payload) {
         let logBefore = 0; let logAfter = 0; let statusStr = "Completed";
 
         if (payload.action === "DR_CREATE") {
-          requestEntries.push([ finalDocId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending DR', '' ]);
+          requestEntries.push([ finalDocId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending DR', '', validated.email ]);
           logEntries.push([ d, finalDocId, payload.action, payload.client, payload.user, payload.siteId, payload.siteName, payload.location, cleanCode, cleanName, itemReq.uom, itemReq.wbs, actualQty, locBefore, locBefore, "Pending DR", "", actualPoNumber, itemReq.price || 0, itemReq.subtotal || 0 ]);
           poAssignEntries.push([ d, finalDocId, payload.user, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, actualPoNumber, poAssignStatus ]);
           continue;
@@ -377,7 +377,7 @@ function processBulkTransaction(payload) {
 
           let reqId = "TRN-" + Utilities.formatDate(d, "GMT+8", "yyyyMMdd-HHmmss") + "-" + Math.floor(Math.random() * 1000);
           let targetDisplay = (payload.targetSite && payload.targetSite !== "-") ? payload.targetSite : payload.targetLoc;
-          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.targetLoc, payload.targetSite, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending Receipt', '' ]);
+          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.targetLoc, payload.targetSite, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending Receipt', '', validated.email ]);
           logEntries.push([ d, reqId, payload.action, '-', payload.user, '-', payload.siteName || '-', payload.location, cleanCode, cleanName, itemReq.uom, '', actualQty, sourceBefore, sourceBefore - actualQty, "Pending Transfer", "" ]);
           continue;
         }
@@ -386,7 +386,7 @@ function processBulkTransaction(payload) {
           invData[idx][locColIdx] = locBefore - actualQty;
           
           let reqId = "ISSUE-" + Utilities.formatDate(d, "GMT+8", "yyyyMMdd-HHmmss") + "-" + Math.floor(Math.random() * 1000);
-          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'In Transit', '' ]);
+          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'In Transit', '', validated.email ]);
           logEntries.push([ d, reqId, payload.action, payload.client, payload.user, payload.siteId, payload.siteName, payload.location, cleanCode, cleanName, itemReq.uom, itemReq.wbs, actualQty, locBefore, locBefore - actualQty, "In Transit", "" ]);
           continue; 
         }
@@ -422,7 +422,7 @@ function processBulkTransaction(payload) {
           if (siteColIdx !== -1) invData[idx][siteColIdx] = siteBefore - actualQty;
           
           let reqId = "RTN-" + Utilities.formatDate(d, "GMT+8", "yyyyMMdd-HHmmss") + "-" + Math.floor(Math.random() * 1000);
-          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending Return', '' ]);
+          requestEntries.push([ reqId, d, payload.user, payload.role, payload.action, payload.location, payload.siteName, cleanCode, cleanName, itemReq.uom, actualQty, 'Pending Return', '', validated.email ]);
           logEntries.push([ d, reqId, payload.action, payload.client, payload.user, payload.siteId, payload.siteName, payload.location, cleanCode, cleanName, itemReq.uom, itemReq.wbs, actualQty, siteBefore, siteBefore - actualQty, "Pending Return", "" ]);
           continue;
         }
@@ -507,7 +507,7 @@ function processBulkTransaction(payload) {
       lSheet.getRange(lSheet.getLastRow() + 1, 1, finalLogs.length, 20).setValues(finalLogs);
     }
     if (discrepancyEntries.length > 0) dSheet.getRange(dSheet.getLastRow() + 1, 1, discrepancyEntries.length, 9).setValues(discrepancyEntries);
-    if (requestEntries.length > 0) rSheet.getRange(rSheet.getLastRow() + 1, 1, requestEntries.length, 13).setValues(requestEntries);
+    if (requestEntries.length > 0) rSheet.getRange(rSheet.getLastRow() + 1, 1, requestEntries.length, 14).setValues(requestEntries);
 
     if (poAssignEntries.length > 0) {
       let paSheet = SS.getSheetByName(SHEETS.PO_ASSIGN);
