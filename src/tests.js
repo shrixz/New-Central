@@ -341,3 +341,40 @@ function test_RECEIVE_DR_notifies_creator_admin() {
   _assert(recents.some(r => r[8] === 'CONFIRM' && r[2] === 'admin@test.com'),
     "Admin received CONFIRM notification for RECEIVE_DR");
 }
+
+function test_queue_confirm_notifies_original_requester() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nSheet = ss.getSheetByName('Notifications');
+
+  // Seed stock so ISSUE will succeed
+  const iSheet = ss.getSheetByName('Inventory');
+  const invData = iSheet.getDataRange().getValues();
+  const ncrCol = invData[0].indexOf('NCR Hub');
+  const itmRow = invData.findIndex(r => r[0] === 'ITM-001');
+  if (itmRow > 0 && ncrCol !== -1) iSheet.getRange(itmRow + 1, ncrCol + 1).setValue(50);
+
+  // Warehouseman issues to Makati Site
+  const issueRes = processBulkTransaction({
+    email: 'wh@test.com', user: 'Alice Warehouseman', role: 'warehouseman', action: 'ISSUE',
+    location: 'NCR Hub', siteName: 'Makati Site', siteId: 'S-001', client: 'Acme Corp',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: 'WBS-991' }]
+  });
+  _assert(issueRes.success, "ISSUE submitted");
+
+  // Find the issue reqId
+  const rSheet = ss.getSheetByName('Requests');
+  const reqs = rSheet.getDataRange().getValues();
+  const issueRow = reqs.slice().reverse().find(r => r[4] === 'ISSUE' && r[11] === 'In Transit');
+  _assert(issueRow, "Found pending ISSUE");
+  const reqId = issueRow[0];
+
+  const startNotifs = nSheet.getLastRow();
+
+  // Team leader confirms
+  processQueueAction(reqId, 'Confirm Receipt', { email: 'tl1@test.com', fullName: 'Bob TeamLeader', role: 'team leader' });
+
+  const recents = nSheet.getRange(startNotifs + 1, 1, nSheet.getLastRow() - startNotifs, 14).getValues();
+  _assert(recents.some(r => r[8] === 'CONFIRM' && r[2] === 'wh@test.com'),
+    "Original warehouseman notified of confirmation");
+}

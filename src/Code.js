@@ -665,7 +665,20 @@ function processQueueAction(reqId, action, userProfile) {
       lSheet.appendRow([new Date(), reqId, 'WH RCVD RETURN', '-', userProfile.fullName, '-', currentData[6], currentData[5], currentData[7], currentData[8], currentData[9], '-', finalQty, locStock, locStock + finalQty, 'Completed', '']);
     }
 
-    rSheet.getRange(rowNum, 12).setValue(newStatus); 
+    rSheet.getRange(rowNum, 12).setValue(newStatus);
+    // === Acknowledgment notification ===
+    try {
+      const creator = resolveRequester(reqId);
+      if (creator) {
+        const outcome = (action === 'Reject') ? 'REJECT' : 'CONFIRM';
+        const verb = (action === 'Reject') ? 'rejected' : 'confirmed';
+        const msg = `${userProfile.fullName} (${userProfile.role}) ${verb} your ${reqAction} request ${reqId}`;
+        const sender = { email: userProfile.email, name: userProfile.fullName, role: userProfile.role };
+        notify([creator], outcome, sender, msg, reqId);
+      }
+    } catch (notifErr) {
+      console.error("notify(queue " + action + ") failed: " + notifErr.toString());
+    }
     SpreadsheetApp.flush();
     return { success: true };
   } catch(e) { return { error: e.toString().replace("Error: ", "") }; } finally { lock.releaseLock(); }
