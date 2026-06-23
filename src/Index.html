@@ -784,7 +784,8 @@
         renderQueue();
         renderPendingPOs();
         handleLocationChange();
-        
+        renderNotifications();
+
         document.querySelectorAll('#entry-rows tr').forEach(r => {
           const rid = r.id.split('-')[1];
           if (r.getAttribute('data-manual') !== 'true') {
@@ -961,6 +962,69 @@
 
   function markAllNotifsRead() {
     // Implemented in Task 18
+  }
+
+  function renderNotifications() {
+    const data = (master && master.notifications) ? master.notifications : { items: [], unreadCount: 0 };
+    const badge = document.getElementById('notif-badge');
+    const list = document.getElementById('notif-list');
+    const footer = document.getElementById('notif-footer');
+    const markAll = document.getElementById('notif-mark-all');
+
+    if (data.unreadCount > 0) {
+      badge.classList.remove('d-none');
+      badge.textContent = data.unreadCount > 99 ? '99+' : String(data.unreadCount);
+      markAll.setAttribute('aria-disabled', 'false');
+    } else {
+      badge.classList.add('d-none');
+      markAll.setAttribute('aria-disabled', 'true');
+    }
+
+    const items = (data.items || []).slice(0, 10);
+    if (items.length === 0) {
+      list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+      footer.textContent = '';
+      return;
+    }
+
+    list.innerHTML = items.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" data-notif-id="${n.notifId}" data-req-id="${n.relatedReqId || ''}" onclick="onNotifClick(this)">
+        <div>
+          <span class="sender">${escapeHtml(n.senderName)}</span><span class="role-tag">${escapeHtml(n.senderRole)}</span>
+        </div>
+        <div class="msg">${escapeHtml(n.message)}</div>
+        <div class="time">${relativeTime(n.timestamp)} · ${escapeHtml(n.action)}</div>
+      </div>
+    `).join('');
+
+    const total = (data.items || []).length;
+    footer.textContent = total > 10 ? `Showing 10 of ${total}` : `${total} notification${total === 1 ? '' : 's'}`;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function relativeTime(iso) {
+    if (!iso) return '';
+    const t = new Date(iso).getTime();
+    if (isNaN(t)) return '';
+    const diff = Date.now() - t;
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    const d = Math.floor(h / 24);
+    if (d < 7) return d + 'd ago';
+    return new Date(t).toLocaleDateString();
+  }
+
+  function onNotifClick(el) {
+    // Placeholder — full handler in Task 18
+    el.classList.remove('unread');
   }
 
   function renderQueue() {
