@@ -144,3 +144,69 @@ function resolveRequester(reqId) {
   if (!match) return null;
   return { email: match.email, name: match.name, role: match.role };
 }
+
+function getNotificationsForUser(userProfile) {
+  const validated = validateUserProfile(userProfile);
+  const nSheet = SS.getSheetByName(SHEETS.NOTIF);
+  if (!nSheet || nSheet.getLastRow() < 2) return { items: [], unreadCount: 0 };
+
+  const data = nSheet.getRange(2, 1, nSheet.getLastRow() - 1, 14).getValues();
+  const target = validated.email.toLowerCase();
+  const mine = data.filter(r => r[2] && r[2].toString().toLowerCase() === target);
+
+  let unreadCount = 0;
+  mine.forEach(r => { if (r[11] === false || r[11] === '' || r[11] === 'FALSE') unreadCount++; });
+
+  const sorted = mine.slice().sort((a, b) => {
+    const ta = a[1] && a[1].getTime ? a[1].getTime() : 0;
+    const tb = b[1] && b[1].getTime ? b[1].getTime() : 0;
+    return tb - ta;
+  });
+
+  const items = sorted.slice(0, 30).map(r => ({
+    notifId: r[0],
+    timestamp: r[1] && r[1].toISOString ? r[1].toISOString() : (r[1] || ''),
+    senderName: r[6] || '',
+    senderRole: r[7] || '',
+    action: r[8] || '',
+    relatedReqId: r[9] || '',
+    message: r[10] || '',
+    read: r[11] === true || r[11] === 'TRUE'
+  }));
+
+  return { items: items, unreadCount: unreadCount };
+}
+
+function markNotificationRead(notifId, userProfile) {
+  const validated = validateUserProfile(userProfile);
+  const nSheet = SS.getSheetByName(SHEETS.NOTIF);
+  if (!nSheet || nSheet.getLastRow() < 2) throw new Error("No notifications.");
+
+  const data = nSheet.getRange(2, 1, nSheet.getLastRow() - 1, 14).getValues();
+  const target = notifId.toString().trim();
+  const idx = data.findIndex(r => r[0] && r[0].toString().trim() === target);
+  if (idx === -1) throw new Error("Notification not found.");
+  if ((data[idx][2] || '').toString().toLowerCase() !== validated.email.toLowerCase()) {
+    throw new Error("Not your notification.");
+  }
+  nSheet.getRange(idx + 2, 12, 1, 2).setValues([[true, new Date()]]);
+  return { success: true };
+}
+
+function markAllNotificationsRead(userProfile) {
+  const validated = validateUserProfile(userProfile);
+  const nSheet = SS.getSheetByName(SHEETS.NOTIF);
+  if (!nSheet || nSheet.getLastRow() < 2) return { success: true, marked: 0 };
+
+  const data = nSheet.getRange(2, 1, nSheet.getLastRow() - 1, 14).getValues();
+  const target = validated.email.toLowerCase();
+  const now = new Date();
+  let marked = 0;
+  data.forEach((r, i) => {
+    if (r[2] && r[2].toString().toLowerCase() === target && r[11] !== true && r[11] !== 'TRUE') {
+      nSheet.getRange(i + 2, 12, 1, 2).setValues([[true, now]]);
+      marked++;
+    }
+  });
+  return { success: true, marked: marked };
+}

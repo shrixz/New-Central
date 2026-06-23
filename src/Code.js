@@ -226,7 +226,13 @@ function getAppData(userProfile) {
       });
     }
     
-    return { inventory, logs, dropdowns, pending, pendingDRs, receiptDocs };
+    let notifications = { items: [], unreadCount: 0 };
+    try {
+      if (validated) notifications = getNotificationsForUser(validated);
+    } catch (notifErr) {
+      console.warn("getNotificationsForUser failed: " + notifErr.toString());
+    }
+    return { inventory, logs, dropdowns, pending, pendingDRs, receiptDocs, notifications };
   } catch (e) {
     console.error("Error in getAppData: " + e.toString());
     throw e; 

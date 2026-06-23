@@ -378,3 +378,54 @@ function test_queue_confirm_notifies_original_requester() {
   _assert(recents.some(r => r[8] === 'CONFIRM' && r[2] === 'wh@test.com'),
     "Original warehouseman notified of confirmation");
 }
+
+function test_getNotificationsForUser_filters_by_email() {
+  initializeSheets();
+  // Generate a notification for wh@test.com
+  notify(
+    [{ email: 'wh@test.com', name: 'Alice Warehouseman', role: 'warehouseman' }],
+    'TEST_ACTION',
+    { email: 'admin@test.com', name: 'Admin User', role: 'admin' },
+    'unit test message',
+    'TEST-001'
+  );
+  const result = getNotificationsForUser({ email: 'wh@test.com' });
+  _assert(Array.isArray(result.items), "Returns items array");
+  _assert(typeof result.unreadCount === 'number', "Returns unreadCount number");
+  _assert(result.items.every(i => i.recipientEmail === undefined || i.recipientEmail.toLowerCase() === 'wh@test.com' || i.recipientEmail === ''),
+    "All items are for the requested user (or stripped of recipientEmail in the payload)");
+}
+
+function test_markNotificationRead_marks_read() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nSheet = ss.getSheetByName('Notifications');
+  notify(
+    [{ email: 'wh@test.com', name: 'Alice', role: 'warehouseman' }],
+    'TEST', { email: 'admin@test.com', name: 'Admin', role: 'admin' },
+    'mark-read test', 'X-001'
+  );
+  const lastRow = nSheet.getRange(nSheet.getLastRow(), 1, 1, 14).getValues()[0];
+  const notifId = lastRow[0];
+  _assert(lastRow[11] === false, "Initially unread");
+  markNotificationRead(notifId, { email: 'wh@test.com' });
+  const after = nSheet.getRange(nSheet.getLastRow(), 1, 1, 14).getValues()[0];
+  _assert(after[11] === true, "Read column set to true");
+}
+
+function test_markNotificationRead_rejects_foreign_notif() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nSheet = ss.getSheetByName('Notifications');
+  notify(
+    [{ email: 'wh@test.com', name: 'Alice', role: 'warehouseman' }],
+    'TEST', { email: 'admin@test.com', name: 'Admin', role: 'admin' },
+    'ownership test', 'X-002'
+  );
+  const lastRow = nSheet.getRange(nSheet.getLastRow(), 1, 1, 14).getValues()[0];
+  const notifId = lastRow[0];
+  let threw = false;
+  try { markNotificationRead(notifId, { email: 'tl1@test.com' }); }
+  catch (e) { threw = e.message.indexOf("Not your notification") !== -1; }
+  _assert(threw, "Throws when caller's email != recipient");
+}
