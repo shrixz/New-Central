@@ -482,3 +482,31 @@ function test_processQueueAction_unknown_branch_still_logs() {
   const endLogs = lSheet.getLastRow();
   _assert(endLogs > startLogs, "Action-log row written even for non-standard branch");
 }
+
+function test_ISSUE_round_trip_warehouseman_to_team_leader() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName('Requests');
+
+  // Seed stock
+  const iSheet = ss.getSheetByName('Inventory');
+  const invData = iSheet.getDataRange().getValues();
+  const ncrCol = invData[0].indexOf('NCR Hub');
+  const itmRow = invData.findIndex(r => r[0] === 'ITM-001');
+  if (itmRow > 0 && ncrCol !== -1) iSheet.getRange(itmRow + 1, ncrCol + 1).setValue(50);
+
+  // Warehouseman issues
+  const before = rSheet.getLastRow();
+  processBulkTransaction({
+    email: 'wh@test.com', user: 'Alice Warehouseman', role: 'warehouseman', action: 'ISSUE',
+    location: 'NCR Hub', siteName: 'Makati Site', siteId: 'S-001', client: 'Acme Corp',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 2, wbs: 'WBS-991' }]
+  });
+  const after = rSheet.getLastRow();
+  _assert(after > before, "ISSUE created a Requests row");
+  const newRow = rSheet.getRange(after, 1, 1, 14).getValues()[0];
+  _assert(newRow[4] === 'ISSUE', "Action = ISSUE");
+  _assert(newRow[11] === 'In Transit', "Status = In Transit (visible to team leader queue)");
+  _assert(newRow[6] === 'Makati Site', "Target site = Makati Site");
+  _assert(newRow[13] === 'wh@test.com', "User Email populated");
+}
