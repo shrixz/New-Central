@@ -465,3 +465,20 @@ function test_RECEIVE_DR_matches_with_whitespace_padding() {
   const status = rSheet.getRange(insertedRowIndex, 12).getValue();
   _assert(status === 'Completed', "Padded DR ID row was correctly matched and marked Completed");
 }
+
+function test_processQueueAction_unknown_branch_still_logs() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName('Requests');
+  const lSheet = ss.getSheetByName('Logs');
+
+  // Inject an oddball request row that doesn't match ISSUE/TRANSFER_WH/RETURN_WH
+  const oddId = 'ODD-' + Math.floor(Math.random() * 100000);
+  rSheet.appendRow([oddId, new Date(), 'Alice Warehouseman', 'warehouseman', 'CUSTOM_ACTION', 'NCR Hub', 'Makati Site',
+    'ITM-001', 'Dell Latitude', 'pc', 1, 'In Transit', '', 'wh@test.com']);
+
+  const startLogs = lSheet.getLastRow();
+  processQueueAction(oddId, 'Confirm Receipt', { email: 'tl1@test.com', fullName: 'Bob TeamLeader', role: 'team leader' });
+  const endLogs = lSheet.getLastRow();
+  _assert(endLogs > startLogs, "Action-log row written even for non-standard branch");
+}

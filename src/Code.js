@@ -659,6 +659,8 @@ function processQueueAction(reqId, action, userProfile) {
          let stock = (Number(invData[iIdx][targetIdx]) || 0);
          iSheet.getRange(iIdx + 1, targetIdx + 1).setValue(stock + finalQty);
          lSheet.appendRow([new Date(), reqId, 'WH RECEIVED', '-', userProfile.fullName, '-', currentData[6], currentData[5], currentData[7], currentData[8], currentData[9], '-', finalQty, stock, stock + finalQty, 'Completed', '']);
+      } else {
+         lSheet.appendRow([new Date(), reqId, 'CONFIRMED', '-', userProfile.fullName, '-', currentData[6], currentData[5], currentData[7], currentData[8], currentData[9], '-', finalQty, 0, 0, 'Completed', '']);
       }
     } else if (action === 'Confirm Return') {
       newStatus = 'Completed';
