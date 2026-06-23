@@ -624,8 +624,9 @@ function assignPOToDoc(docNumber, poNumber, userProfile) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
-    const validated = validateUserProfile(userProfile);
     if (!SS) throw new Error("Could not access spreadsheet.");
+    const validated = validateUserProfile(userProfile);
+    userProfile = validated;
     if (!docNumber || !poNumber) throw new Error("Doc Number and PO Number are both required.");
 
     const paSheet = SS.getSheetByName(SHEETS.PO_ASSIGN);
