@@ -70,3 +70,37 @@ function test_processBulkTransaction_rejects_unknown_email() {
   _assert(result.success === false, "processBulkTransaction returns success=false for unknown email");
   _assert(result.error.indexOf("not recognized") !== -1, "Error mentions 'not recognized'");
 }
+
+function test_notify_writes_one_row_per_recipient() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nSheet = ss.getSheetByName('Notifications');
+  const startRows = nSheet.getLastRow();
+
+  const recipients = [
+    { email: 'wh@test.com', name: 'Alice Warehouseman', role: 'warehouseman' },
+    { email: 'tl1@test.com', name: 'Bob TeamLeader', role: 'team leader' }
+  ];
+  const sender = { email: 'admin@test.com', name: 'Admin User', role: 'admin' };
+
+  const result = notify(recipients, 'DR_CREATE', sender, 'Test message body', 'DOC-TEST-001');
+
+  _assert(result.inserted === 2, "Inserted 2 rows");
+  _assert(nSheet.getLastRow() === startRows + 2, "Sheet has 2 more rows");
+
+  const newRows = nSheet.getRange(startRows + 1, 1, 2, 14).getValues();
+  _assert(newRows[0][2] === 'wh@test.com', "Row 1 recipient email");
+  _assert(newRows[0][8] === 'DR_CREATE', "Row 1 action");
+  _assert(newRows[0][11] === false, "Row 1 Read = false");
+  _assert(newRows[0][13].toString().indexOf('sent') === 0 || newRows[0][13].toString().indexOf('failed') === 0,
+    "Row 1 Email Status is sent or failed (test inbox may not accept mail)");
+}
+
+function test_notify_handles_empty_email_gracefully() {
+  initializeSheets();
+  const recipients = [{ email: '', name: 'No Email User', role: 'admin' }];
+  const sender = { email: 'admin@test.com', name: 'Admin User', role: 'admin' };
+  const result = notify(recipients, 'DR_CREATE', sender, 'Test', 'DOC-X');
+  _assert(result.inserted === 1, "Still writes a row");
+  _assert(result.emailsSent === 0, "Skips empty-email send");
+}
