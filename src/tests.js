@@ -30,3 +30,28 @@ function test_schema_requests_user_email_column() {
   _assert(headers.length >= 14, "Requests has at least 14 columns");
   _assert(headers[13] === 'User Email', "Requests col 13 (14th) is 'User Email'");
 }
+
+function test_validateUserProfile_rejects_missing() {
+  let threw = false;
+  try { validateUserProfile(null); } catch (e) { threw = e.message.indexOf("Authentication required") !== -1; }
+  _assert(threw, "Throws 'Authentication required' for null profile");
+}
+
+function test_validateUserProfile_rejects_unknown_email() {
+  let threw = false;
+  try { validateUserProfile({ email: 'not-a-real-user@nowhere.test' }); }
+  catch (e) { threw = e.message.indexOf("not recognized") !== -1; }
+  _assert(threw, "Throws 'User account not recognized' for unknown email");
+}
+
+function test_validateUserProfile_returns_sheet_values_not_client_values() {
+  initializeSheets();
+  const result = validateUserProfile({
+    email: 'admin@test.com',
+    fullName: 'CLIENT-SUPPLIED-NAME-IGNORE-ME',
+    role: 'team leader'  // client claims team leader but sheet says admin
+  });
+  _assert(result.role === 'admin', "Returns role from sheet (admin), not from client (team leader)");
+  _assert(result.fullName === 'Admin User', "Returns fullName from sheet, not from client");
+  _assert(result.email === 'admin@test.com', "Returns email from sheet");
+}

@@ -646,11 +646,32 @@ function assignPOToDoc(docNumber, poNumber) {
 
 function getLogoSafe() {
   try {
-    const fileId = '1y-fSgltpWZthKy-SzwUpWCR9MbPWPe3o'; 
+    const fileId = '1y-fSgltpWZthKy-SzwUpWCR9MbPWPe3o';
     const file = DriveApp.getFileById(fileId);
     const blob = file.getBlob();
     return "data:" + blob.getContentType() + ";base64," + Utilities.base64Encode(blob.getBytes());
   } catch (e) {
-    return ""; 
+    return "";
   }
+}
+
+function validateUserProfile(userProfile) {
+  if (!userProfile || !userProfile.email) {
+    throw new Error("Authentication required.");
+  }
+  const uSheet = SS.getSheetByName(SHEETS.USERS);
+  if (!uSheet) throw new Error("Users sheet missing.");
+  const data = uSheet.getDataRange().getValues();
+  const claimed = userProfile.email.toString().trim().toLowerCase();
+  const row = data.find(r => r[0] && r[0].toString().trim().toLowerCase() === claimed);
+  if (!row) {
+    throw new Error("User account not recognized.");
+  }
+  return {
+    email: row[0].toString().trim(),
+    fullName: row[1] ? row[1].toString() : '',
+    role: row[4] ? row[4].toString().toLowerCase() : 'team leader',
+    locAccess: row[5] ? row[5].toString().trim() : '',
+    siteAccess: row[6] ? row[6].toString().trim() : ''
+  };
 }
