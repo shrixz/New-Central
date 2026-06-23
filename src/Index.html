@@ -1145,7 +1145,7 @@
                   }
               })
               .withFailureHandler(err => { toggle(false); Swal.fire('Error', 'Assign failed.', 'error'); })
-              .assignPOToDoc(docNumber, poNumber);
+              .assignPOToDoc(docNumber, poNumber, { email: currentEmail, fullName: currentUser, role: userRole });
       });
   }
 

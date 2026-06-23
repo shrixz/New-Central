@@ -25,6 +25,16 @@ function doGet(e) {
 function getAppData(userProfile) {
   try {
     if (!SS) throw new Error("Could not access spreadsheet.");
+    let validated = null;
+    try {
+      validated = validateUserProfile(userProfile);
+      userProfile = validated;
+    } catch (validErr) {
+      // Fall through with unvalidated profile so the app still loads for
+      // legacy/transitional sessions. Pending queue and notifications
+      // will be empty for unrecognized users.
+      console.warn("getAppData unvalidated profile: " + validErr.toString());
+    }
     const iSheet = SS.getSheetByName(SHEETS.INV);
     const lSheet = SS.getSheetByName(SHEETS.LOGS);
     const uSheet = SS.getSheetByName(SHEETS.USERS);
@@ -228,6 +238,11 @@ function processBulkTransaction(payload) {
   try {
     lock.waitLock(20000);
     if (!SS) throw new Error("Could not access spreadsheet.");
+
+    const validated = validateUserProfile({ email: payload.email, fullName: payload.user, role: payload.role });
+    payload.user = validated.fullName;
+    payload.role = validated.role;
+    payload.userEmail = validated.email;
 
     // PO is captured when a Delivery Receipt is encoded / purchase is logged. Either pick one or mark "PO to follow".
     if ((payload.action === 'DR_CREATE' || payload.action === 'PURCHASE_LOG') && !payload.poToFollow && !payload.poNumber) {
@@ -518,6 +533,8 @@ function processQueueAction(reqId, action, userProfile) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
+    const validated = validateUserProfile(userProfile);
+    userProfile = validated;
     const rSheet = SS.getSheetByName(SHEETS.REQ);
     const iSheet = SS.getSheetByName(SHEETS.INV);
     const lSheet = SS.getSheetByName(SHEETS.LOGS);
@@ -603,10 +620,11 @@ function processQueueAction(reqId, action, userProfile) {
   } catch(e) { return { error: e.toString().replace("Error: ", "") }; } finally { lock.releaseLock(); }
 }
 
-function assignPOToDoc(docNumber, poNumber) {
+function assignPOToDoc(docNumber, poNumber, userProfile) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
+    const validated = validateUserProfile(userProfile);
     if (!SS) throw new Error("Could not access spreadsheet.");
     if (!docNumber || !poNumber) throw new Error("Doc Number and PO Number are both required.");
 

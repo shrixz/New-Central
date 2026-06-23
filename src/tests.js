@@ -55,3 +55,18 @@ function test_validateUserProfile_returns_sheet_values_not_client_values() {
   _assert(result.fullName === 'Admin User', "Returns fullName from sheet, not from client");
   _assert(result.email === 'admin@test.com', "Returns email from sheet");
 }
+
+function test_processBulkTransaction_rejects_unknown_email() {
+  initializeSheets();
+  const result = processBulkTransaction({
+    email: 'ghost@nowhere.test',
+    user: 'Ghost',
+    role: 'admin',
+    action: 'PURCHASE_LOG',
+    location: 'NCR Hub',
+    poNumber: 'PO-10001',
+    items: [{ code: 'ITM-001', name: 'Test', uom: 'pc', qty: 1, wbs: '' }]
+  });
+  _assert(result.success === false, "processBulkTransaction returns success=false for unknown email");
+  _assert(result.error.indexOf("not recognized") !== -1, "Error mentions 'not recognized'");
+}
