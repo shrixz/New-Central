@@ -961,7 +961,20 @@
   });
 
   function markAllNotifsRead() {
-    // Implemented in Task 18
+    const list = document.getElementById('notif-list');
+    list.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    document.getElementById('notif-badge').classList.add('d-none');
+
+    google.script.run
+      .withSuccessHandler(() => {
+        // Refresh notifications block only — no need to full-refresh
+        google.script.run.withSuccessHandler(data => {
+          if (master) master.notifications = data;
+          renderNotifications();
+        }).getNotificationsForUser({ email: currentEmail, fullName: currentUser, role: userRole });
+      })
+      .withFailureHandler(err => console.error("markAllNotificationsRead failed:", err))
+      .markAllNotificationsRead({ email: currentEmail, fullName: currentUser, role: userRole });
   }
 
   function renderNotifications() {
@@ -1023,8 +1036,35 @@
   }
 
   function onNotifClick(el) {
-    // Placeholder — full handler in Task 18
+    const notifId = el.getAttribute('data-notif-id');
+    const reqId = el.getAttribute('data-req-id');
+    if (!notifId) return;
+
+    // Optimistic UI: mark unread style off
     el.classList.remove('unread');
+    const badge = document.getElementById('notif-badge');
+    if (badge && !badge.classList.contains('d-none')) {
+      const n = parseInt(badge.textContent) || 0;
+      if (n <= 1) badge.classList.add('d-none');
+      else badge.textContent = String(n - 1);
+    }
+
+    google.script.run
+      .withSuccessHandler(() => {
+        if (reqId) {
+          // Switch to Pending Actions tab and try to scroll the related card into view
+          const tab = document.querySelector('[data-bs-target="#tab-queue"]');
+          if (tab) tab.click();
+          setTimeout(() => {
+            const card = document.querySelector(`[data-req-id="${reqId}"]`);
+            if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 400);
+        }
+        // Close the panel
+        document.getElementById('notif-panel').classList.add('d-none');
+      })
+      .withFailureHandler(err => console.error("markNotificationRead failed:", err))
+      .markNotificationRead(notifId, { email: currentEmail, fullName: currentUser, role: userRole });
   }
 
   function renderQueue() {
