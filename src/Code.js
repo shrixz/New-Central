@@ -509,6 +509,20 @@ function processBulkTransaction(payload) {
     if (discrepancyEntries.length > 0) dSheet.getRange(dSheet.getLastRow() + 1, 1, discrepancyEntries.length, 9).setValues(discrepancyEntries);
     if (requestEntries.length > 0) rSheet.getRange(rSheet.getLastRow() + 1, 1, requestEntries.length, 14).setValues(requestEntries);
 
+    // === Notifications ===
+    try {
+      const sender = { email: validated.email, name: validated.fullName, role: validated.role };
+
+      if (payload.action === 'DR_CREATE' && requestEntries.length > 0) {
+        const recipients = resolveRecipients('DR_CREATE', payload);
+        const itemList = requestEntries.map(r => r[7]).join(', ').substring(0, 120);
+        const msg = `${validated.fullName} created DR ${finalDocId} (${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'}: ${itemList}) — pending your receipt`;
+        notify(recipients, 'DR_CREATE', sender, msg, finalDocId);
+      }
+    } catch (notifErr) {
+      console.error("notify(DR_CREATE) failed: " + notifErr.toString());
+    }
+
     if (poAssignEntries.length > 0) {
       let paSheet = SS.getSheetByName(SHEETS.PO_ASSIGN);
       if (!paSheet) {

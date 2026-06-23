@@ -158,3 +158,30 @@ function test_processBulkTransaction_writes_user_email_on_requests() {
   const newRow = rSheet.getRange(startRows + 1, 1, 1, 14).getValues()[0];
   _assert(newRow[13] === 'admin@test.com', "User Email column populated on new Requests row");
 }
+
+function test_DR_CREATE_fires_notification() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const nSheet = ss.getSheetByName('Notifications');
+  const startNotifs = nSheet.getLastRow();
+
+  processBulkTransaction({
+    email: 'admin@test.com',
+    user: 'Admin User',
+    role: 'admin',
+    action: 'DR_CREATE',
+    location: 'NCR Hub',
+    siteName: 'Makati Site',
+    siteId: 'S-001',
+    client: 'Acme Corp',
+    poNumber: 'PO-10001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 5, wbs: 'WBS-991' }]
+  });
+
+  const endNotifs = nSheet.getLastRow();
+  _assert(endNotifs > startNotifs, "Notifications sheet grew");
+  const newRow = nSheet.getRange(endNotifs, 1, 1, 14).getValues()[0];
+  _assert(newRow[8] === 'DR_CREATE', "Notification action = DR_CREATE");
+  _assert(newRow[4] === 'warehouseman', "Recipient role = warehouseman");
+  _assert(newRow[2] === 'wh@test.com', "Recipient is NCR Hub warehouseman");
+}
