@@ -527,6 +527,7 @@
   }
 
   function doLogout() {
+    stopNotifPolling();
     localStorage.removeItem('inventoryUser');
     localStorage.removeItem('inventoryEmail');
     localStorage.removeItem('inventoryRole');
@@ -564,7 +565,8 @@
         `;
     }
     
-    refresh(); 
+    refresh();
+    startNotifPolling();
   }
 
   function updateSiteDropdown() {
@@ -799,6 +801,27 @@
       })
       .withFailureHandler(err => { if (!silent) toggle(false); })
       .getAppData({ email: currentEmail, fullName: currentUser, role: userRole, locAccess: locAccess, siteAccess: siteAccess });
+  }
+
+  let notifPollTimer = null;
+
+  function startNotifPolling() {
+    if (notifPollTimer) return;
+    notifPollTimer = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (!currentEmail) return;
+      google.script.run
+        .withSuccessHandler(data => {
+          if (master) master.notifications = data;
+          renderNotifications();
+        })
+        .withFailureHandler(err => console.warn("Notif poll failed:", err))
+        .getNotificationsForUser({ email: currentEmail, fullName: currentUser, role: userRole });
+    }, 60000);
+  }
+
+  function stopNotifPolling() {
+    if (notifPollTimer) { clearInterval(notifPollTimer); notifPollTimer = null; }
   }
 
   function getAvailableMasterlist(excludeRid = null) {
