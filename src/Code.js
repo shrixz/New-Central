@@ -542,6 +542,12 @@ function processBulkTransaction(payload) {
         const msg = `${validated.fullName} returned ${requestEntries.length} item${requestEntries.length === 1 ? '' : 's'} (${itemList}) from ${payload.siteName} to ${payload.location} — pending your receipt`;
         notify(recipients, 'RETURN_WH', sender, msg, reqId);
       }
+      if (payload.action === 'RETURN_CLIENT') {
+        const recipients = resolveRecipients('RETURN_CLIENT', payload);
+        const itemList = (returnedItems || []).map(r => r.code).join(', ').substring(0, 120);
+        const msg = `${validated.fullName} processed a client return at ${payload.location} (${(returnedItems || []).length} item${(returnedItems || []).length === 1 ? '' : 's'}: ${itemList})`;
+        notify(recipients, 'RETURN_CLIENT', sender, msg, finalDocId);
+      }
     } catch (notifErr) {
       console.error("notify(DR_CREATE) failed: " + notifErr.toString());
     }

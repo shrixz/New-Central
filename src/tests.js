@@ -278,3 +278,38 @@ function test_RETURN_WH_notifies_location_warehouseman() {
   _assert(recents.some(r => r[2] === 'wh@test.com' && r[8] === 'RETURN_WH'),
     "NCR Hub warehouseman notified for RETURN_WH");
 }
+
+function test_RETURN_CLIENT_notifies_admins() {
+  initializeSheets();
+  // Need a prior RECEIVE_DR to provide stock to return; for the test we just
+  // seed Inventory directly with stock at NCR Hub for ITM-001.
+  const iSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inventory');
+  const invData = iSheet.getDataRange().getValues();
+  const headers = invData[0];
+  const ncrCol = headers.indexOf('NCR Hub');
+  const itmRow = invData.findIndex(r => r[0] === 'ITM-001');
+  if (itmRow > 0 && ncrCol !== -1) iSheet.getRange(itmRow + 1, ncrCol + 1).setValue(50);
+
+  const nSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notifications');
+  const startNotifs = nSheet.getLastRow();
+
+  processBulkTransaction({
+    email: 'wh@test.com',
+    user: 'Alice Warehouseman',
+    role: 'warehouseman',
+    action: 'RETURN_CLIENT',
+    location: 'NCR Hub',
+    siteName: '-',
+    siteId: '-',
+    client: 'Acme Corp',
+    refDoc: 'DR-TEST-001',
+    sourceDoc: 'DR-TEST-001',
+    mrcNum: 'MRC-001',
+    returnType: 'BY_SITE',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, actualReturnQty: '1', wbs: '' }]
+  });
+
+  const recents = nSheet.getRange(startNotifs + 1, 1, nSheet.getLastRow() - startNotifs, 14).getValues();
+  _assert(recents.some(r => r[8] === 'RETURN_CLIENT' && r[4] === 'admin'),
+    "Admin notified for RETURN_CLIENT");
+}
