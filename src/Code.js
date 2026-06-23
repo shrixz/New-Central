@@ -548,6 +548,14 @@ function processBulkTransaction(payload) {
         const msg = `${validated.fullName} processed a client return at ${payload.location} (${(returnedItems || []).length} item${(returnedItems || []).length === 1 ? '' : 's'}: ${itemList})`;
         notify(recipients, 'RETURN_CLIENT', sender, msg, finalDocId);
       }
+      if (payload.action === 'RECEIVE_DR') {
+        const creator = resolveRequester(payload.drId);
+        if (creator) {
+          const itemCount = payload.items ? payload.items.length : 0;
+          const msg = `${validated.fullName} received DR ${payload.drId} (${itemCount} item${itemCount === 1 ? '' : 's'})`;
+          notify([creator], 'CONFIRM', sender, msg, payload.drId);
+        }
+      }
     } catch (notifErr) {
       console.error("notify(DR_CREATE) failed: " + notifErr.toString());
     }

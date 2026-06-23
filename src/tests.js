@@ -313,3 +313,31 @@ function test_RETURN_CLIENT_notifies_admins() {
   _assert(recents.some(r => r[8] === 'RETURN_CLIENT' && r[4] === 'admin'),
     "Admin notified for RETURN_CLIENT");
 }
+
+function test_RECEIVE_DR_notifies_creator_admin() {
+  initializeSheets();
+  const nSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Notifications');
+
+  // First: admin creates a DR
+  const drId = 'DR-RECV-TEST-' + Math.floor(Math.random() * 10000);
+  // Use processBulkTransaction so the User Email column is populated.
+  processBulkTransaction({
+    email: 'admin@test.com', user: 'Admin User', role: 'admin', action: 'DR_CREATE',
+    location: 'NCR Hub', siteName: 'Makati Site', siteId: 'S-001', client: 'Acme Corp',
+    refDoc: drId, poNumber: 'PO-10001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 2, wbs: 'WBS-991' }]
+  });
+
+  const startAfterCreate = nSheet.getLastRow();
+
+  // Now warehouseman receives it
+  processBulkTransaction({
+    email: 'wh@test.com', user: 'Alice Warehouseman', role: 'warehouseman', action: 'RECEIVE_DR',
+    location: 'NCR Hub', drId: drId, client: 'Acme Corp', siteName: 'Makati Site', siteId: 'S-001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 2, wbs: 'WBS-991' }]
+  });
+
+  const recents = nSheet.getRange(startAfterCreate + 1, 1, nSheet.getLastRow() - startAfterCreate, 14).getValues();
+  _assert(recents.some(r => r[8] === 'CONFIRM' && r[2] === 'admin@test.com'),
+    "Admin received CONFIRM notification for RECEIVE_DR");
+}
