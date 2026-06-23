@@ -443,3 +443,25 @@ function test_assignPOToDoc_empty_sheet_returns_clean_error() {
   _assert(result.error && result.error.indexOf("no rows") === -1 && (result.error.indexOf("No pending") !== -1 || result.error.indexOf("no pending") !== -1),
     "Returns a friendly 'no pending' message rather than the stack-trace error");
 }
+
+function test_RECEIVE_DR_matches_with_whitespace_padding() {
+  initializeSheets();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const rSheet = ss.getSheetByName('Requests');
+
+  // Inject a Pending DR row with whitespace-padded Req ID
+  const paddedDR = '  DR-WS-TEST-001  ';
+  rSheet.appendRow([paddedDR, new Date(), 'Admin User', 'admin', 'DR_CREATE', 'NCR Hub', 'Makati Site',
+    'ITM-001', 'Dell Latitude', 'pc', 1, 'Pending DR', '', 'admin@test.com']);
+  const insertedRowIndex = rSheet.getLastRow();
+
+  // Warehouseman receives — uses the trimmed DR ID
+  processBulkTransaction({
+    email: 'wh@test.com', user: 'Alice Warehouseman', role: 'warehouseman', action: 'RECEIVE_DR',
+    location: 'NCR Hub', drId: 'DR-WS-TEST-001', client: 'Acme Corp', siteName: 'Makati Site', siteId: 'S-001',
+    items: [{ code: 'ITM-001', name: 'Dell Latitude', uom: 'pc', qty: 1, wbs: '' }]
+  });
+
+  const status = rSheet.getRange(insertedRowIndex, 12).getValue();
+  _assert(status === 'Completed', "Padded DR ID row was correctly matched and marked Completed");
+}

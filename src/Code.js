@@ -320,7 +320,7 @@ function processBulkTransaction(payload) {
       payload.items.forEach(itemReq => {
          let cleanCode = itemReq.code.toString().trim();
          // drId comparison fixed
-         let rIdx = rData.findIndex(row => row[0].toString() === payload.drId.toString() && row[7].toString().trim().toLowerCase() === cleanCode.toLowerCase() && row[11] === 'Pending DR');
+         let rIdx = rData.findIndex(row => row[0].toString().trim() === payload.drId.toString().trim() && row[7].toString().trim().toLowerCase() === cleanCode.toLowerCase() && row[11] === 'Pending DR');
          if (rIdx !== -1) {
             rSheet.getRange(rIdx + 1, 12).setValue('Completed'); 
          }
@@ -597,7 +597,7 @@ function processQueueAction(reqId, action, userProfile) {
     const lSheet = SS.getSheetByName(SHEETS.LOGS);
     
     const reqData = rSheet.getDataRange().getValues();
-    const rowIndex = reqData.findIndex(r => r[0] === reqId);
+    const rowIndex = reqData.findIndex(r => r[0] && r[0].toString().trim() === reqId.toString().trim());
     if (rowIndex === -1) throw new Error("Request not found.");
     const currentData = reqData[rowIndex];
     const rowNum = rowIndex + 1;
